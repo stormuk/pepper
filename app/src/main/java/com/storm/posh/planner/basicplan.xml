@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Plan>
+  <ActionPatterns>
+    <ActionPattern name ="AP-ShootBack">
+      <action name ="TurnToDamage"></action>
+      <action name ="ShootEnemiesInSight"></action>
+    </ActionPattern>
+    <ActionPattern name ="AP-ShootEnemiesInSight">
+      <action name ="ShootEnemiesInSight"></action>
+    </ActionPattern>
+    <ActionPattern name ="AP-MoveAround">
+      <action name ="TurnToNextPathNode"></action>
+      <action name ="MoveToNextNode"></action>
+    </ActionPattern>
+    <ActionPattern name ="AP-GrabFlag">
+      <action name ="MovetoFlag"></action>
+      <action name ="GrabEnemyTeamFlag"></action>
+    </ActionPattern>
+    <ActionPattern name ="AP-Return">
+      <action name ="ReturnToBase"></action>
+    </ActionPattern>
+  </ActionPatterns>
+  <CompetenceElements>
+    <CompetenceElement name ="CE-Test" triggers ="AP-ShootBack">
+      <Senses>
+        <Sense name="IsDamaged" value ="1" comperator="bool"></Sense>
+      </Senses>
+    </CompetenceElement>
+    <CompetenceElement name ="CE-Shoot" triggers ="AP-ShootEnemiesInSight">
+      <Senses>
+      </Senses>
+    </CompetenceElement>
+  </CompetenceElements>
+  <Competences>
+    <Competence name="C-Shoot">
+      <Goals>
+        <Goal name="AllTargetsAreDead" value ="1" comperator="bool"></Goal>
+      </Goals>
+      <CompetenceElements>
+        <CompetenceElement name="CE-Shoot"></CompetenceElement>
+      </CompetenceElements>
+    </Competence>
+  </Competences>
+  <DriveElements>
+    <DriveElement name="DE-ShootBack" triggers ="AP-ShootBack" checkTime ="0">
+      <Senses>
+        <Sense name="IsDamaged" value ="1" comperator="bool"></Sense>
+      </Senses>
+    </DriveElement>
+    <DriveElement name="DE-ShootEnemies" triggers ="C-Shoot" checkTime ="0">
+      <Senses>
+        <Sense name ="EnemiesSpotted" value ="1" comperator ="bool"></Sense>
+      </Senses>
+    </DriveElement>
+    <DriveElement name="DE-MoveAround" triggers ="AP-MoveAround" checkTime ="0.1">
+      <Senses>
+        <Sense name ="DoesPathExist" value ="1" comperator ="bool"></Sense>
+        <Sense name="IsDamaged" value ="0" comperator="bool"></Sense>
+      </Senses>
+    </DriveElement>
+    <DriveElement name="DE-GrabFlag" triggers ="AP-GrabFlag" checkTime ="0.1">
+      <Senses>
+        <Sense name ="HasFlag" value ="0" comperator ="bool"></Sense>
+        <Sense name ="EnemyTeamFlagInSight" value ="1" comperator ="bool"></Sense>
+      </Senses>
+    </DriveElement>
+    <DriveElement name="DE-ScoreFlag" triggers ="AP-Return" checkTime ="1">
+      <Senses>
+        <Sense name ="HasFlag" value ="1" comperator ="bool"></Sense>
+      </Senses>
+    </DriveElement>
+  </DriveElements>
+  <Drives>
+    <Drive name="D-ScoreFlag">
+      <Senses>
+      </Senses>
+      <DriveElements>
+        <DriveElement name="DE-GrabFlag"></DriveElement>
+        <DriveElement name="DE-ScoreFlag"></DriveElement>
+        <DriveElement name="DE-MoveAround"></DriveElement>
+      </DriveElements>
+    </Drive>
+    <Drive name="D-KillEnemies">
+      <Senses>
+      </Senses>
+      <DriveElements>
+        <DriveElement name="DE-ShootBack"></DriveElement>
+        <DriveElement name="DE-ShootEnemies"></DriveElement>
+      </DriveElements>
+    </Drive>
+  </Drives>
+</Plan>
