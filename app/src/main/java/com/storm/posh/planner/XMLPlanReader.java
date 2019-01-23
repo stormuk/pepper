@@ -8,7 +8,6 @@ import com.storm.posh.planner.planelements.Competence;
 import com.storm.posh.planner.planelements.CompetenceElement;
 import com.storm.posh.planner.planelements.DriveCollection;
 import com.storm.posh.planner.planelements.DriveElement;
-import com.storm.posh.planner.planelements.Goal;
 import com.storm.posh.planner.planelements.Plan;
 import com.storm.posh.planner.planelements.Sense;
 
@@ -187,8 +186,8 @@ public class XMLPlanReader {
             if (eventType == XmlPullParser.START_TAG) {
                 Log.d(TAG, String.format("readCompetenceElement: found %s", tag));
 
-                if (tag.equals("Sense")) {
-                    senses.add(readSense(parser));
+                if (tag.equals("Senses")) {
+                    senses = readSenses(parser, tag);
                 }
             }
 
@@ -199,16 +198,16 @@ public class XMLPlanReader {
         return new CompetenceElement(competenceElementName, senses, triggerableName);
     }
 
-    private List readSenses(XmlPullParser parser) throws XmlPullParserException, IOException {
-        Log.d(TAG, "Reading senses");
+    private List readSenses(XmlPullParser parser, String requiredTag) throws XmlPullParserException, IOException {
+        Log.d(TAG, String.format("Reading senses (%s)", requiredTag));
         List senses = new ArrayList();
 
-        parser.require(XmlPullParser.START_TAG, ns, "Senses");
+        parser.require(XmlPullParser.START_TAG, ns, requiredTag);
 
         String tag = parser.getName();
         int eventType = parser.getEventType();
 
-        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Senses"))) {
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals(requiredTag))) {
             if (eventType == XmlPullParser.START_TAG) {
                 Log.d(TAG, String.format("readSenses: found %s", tag));
 
@@ -265,7 +264,7 @@ public class XMLPlanReader {
         parser.require(XmlPullParser.START_TAG, ns, "Competence");
 
         String competenceName = parser.getAttributeValue(null, "name");
-        List<Goal> goals = new ArrayList<>();
+        List<Sense> senses = new ArrayList();
         List<CompetenceElement> competenceElements = new ArrayList<>();
 
         String tag = parser.getName();
@@ -275,8 +274,8 @@ public class XMLPlanReader {
             if (eventType == XmlPullParser.START_TAG) {
                 Log.d(TAG, String.format("readCompetence: found %s", tag));
 
-                if (tag.equals("Goals")) {
-                    goals = readGoals(parser);
+                if (tag.equals("Senses")) {
+                    senses = readSenses(parser, tag);
                 } else if (tag.equals("CompetenceElements")) {
                     competenceElements = readCompetenceElements(parser);
                 }
@@ -286,43 +285,7 @@ public class XMLPlanReader {
             tag = parser.getName();
         }
 
-        return new Competence(competenceName, goals, competenceElements);
-    }
-
-    private List readGoals(XmlPullParser parser) throws XmlPullParserException, IOException {
-        Log.d(TAG, "Reading goals");
-        List goals = new ArrayList();
-
-        parser.require(XmlPullParser.START_TAG, ns, "Goals");
-
-        String tag = parser.getName();
-        int eventType = parser.getEventType();
-
-        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Goals"))) {
-            if (eventType == XmlPullParser.START_TAG) {
-                Log.d(TAG, String.format("readGoals: found %s", tag));
-
-                if (tag.equals("Goal")) {
-                    goals.add(readGoal(parser));
-                }
-            }
-
-            eventType = parser.next();
-            tag = parser.getName();
-        }
-
-        return goals;
-    }
-
-    private Goal readGoal(XmlPullParser parser) throws XmlPullParserException, IOException {
-        Log.d(TAG, "Reading goal");
-        parser.require(XmlPullParser.START_TAG, ns, "Goal");
-
-        String name = parser.getAttributeValue(null, "name");
-        String value = parser.getAttributeValue(null, "value");
-        String comparator = parser.getAttributeValue(null, "comparator");
-
-        return new Goal(name, value, comparator);
+        return new Competence(competenceName, senses, competenceElements);
     }
 
     private List readDriveElements(XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -367,7 +330,7 @@ public class XMLPlanReader {
                 Log.d(TAG, String.format("readDriveElement: found %s", tag));
 
                 if (tag.equals("Senses")) {
-                    senses = readSenses(parser);
+                    senses = readSenses(parser, tag);
                 }
             }
 
@@ -409,7 +372,7 @@ public class XMLPlanReader {
 
         String driveCollectionName = parser.getAttributeValue(null, "name");
         String drivePriority = parser.getAttributeValue(null, "priority");
-        List<Sense> senses = new ArrayList();
+        List<Sense> triggers = new ArrayList();
         List<DriveElement> driveElements = new ArrayList();
 
         Integer priority = 0;
@@ -424,8 +387,8 @@ public class XMLPlanReader {
             if (eventType == XmlPullParser.START_TAG) {
                 Log.d(TAG, String.format("readDriveCollection: found %s", tag));
 
-                if (tag.equals("Senses")) {
-                    senses = readSenses(parser);
+                if (tag.equals("Goals")) {
+                    triggers = readSenses(parser, tag);
                 } else if (tag.equals("DriveElements")) {
                     driveElements = readDriveElements(parser);
                 }
@@ -435,7 +398,7 @@ public class XMLPlanReader {
             tag = parser.getName();
         }
 
-        return new DriveCollection(driveCollectionName, senses, driveElements, priority);
+        return new DriveCollection(driveCollectionName, triggers, driveElements, priority);
     }
 }
 

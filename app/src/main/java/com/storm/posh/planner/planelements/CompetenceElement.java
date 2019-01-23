@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class CompetenceElement extends PlanElement {
-    public List senses;
+    public List<Sense> senses;
     public PlanElement triggerableElement;
     public String triggerableName;
 
@@ -26,10 +26,8 @@ public class CompetenceElement extends PlanElement {
 
 
     public CompetenceElement(String name, List<Sense> senses, PlanElement triggerableElement) {
-        super(name);
-        this.senses = senses;
+        this(name, senses, triggerableElement.name);
         this.triggerableElement = triggerableElement;
-        this.triggerableName = triggerableElement.name;
     }
 }
 

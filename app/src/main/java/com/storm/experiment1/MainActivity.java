@@ -13,6 +13,8 @@ import com.aldebaran.qi.sdk.object.conversation.Say;
 import com.storm.posh.planner.BehaviourLibrary;
 import com.storm.posh.planner.Planner;
 
+import java.util.Objects;
+
 public class MainActivity extends RobotActivity implements RobotLifecycleCallbacks {
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -23,6 +25,8 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         // Register the RobotLifecycleCallbacks to this Activity.
         QiSDK.register(this, this);
 
+
+        Log.d(TAG, "GETTING PLAN");
         Planner planner = new Planner();
         BehaviourLibrary behaviourLibrary = new BehaviourLibrary();
 
@@ -31,6 +35,15 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         XmlResourceParser xmlPlan = getResources().getXml(R.xml.plan);
 
         planner.start(xmlPlan);
+
+        Log.d(TAG, "RUNNING PLAN");
+        for(int i=0; i<50; i++) {
+            Log.d(TAG, String.format("ITERATION #%d", i));
+            if (!planner.update()) {
+                Log.d(TAG, "REACHED END OF PLAN");
+                break;
+            }
+        }
     }
 
     @Override

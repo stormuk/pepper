@@ -4,23 +4,23 @@ import java.util.List;
 import java.util.Objects;
 
 public class DriveCollection extends PlanElement {
-    public List<Sense> senses;
+    public List<Sense> goals;
     public List<DriveElement> driveElements;
-    public Integer priority = 0;
+    public Integer priority;
 
     @Override
     public String toString() {
         return "DriveElement {" +
                 " name='" + name + '\'' +
                 " priority=" + priority.toString() +
-                " senses=" + Objects.toString(senses)+
+                " goals=" + Objects.toString(goals)+
                 " driveElements=" + Objects.toString(driveElements)+
                 " }";
     }
 
-    public DriveCollection(String name, List senses, List driveElements, Integer priority) {
+    public DriveCollection(String name, List<Sense> goals, List<DriveElement> driveElements, Integer priority) {
         super(name);
-        this.senses = senses;
+        this.goals = goals;
         this.driveElements = driveElements;
         this.priority = priority;
     }

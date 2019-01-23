@@ -44,6 +44,7 @@ public class Plan {
     }
 
     public void linkCompetenceElements() {
+        Log.d(TAG, "Linking competence elements");
         elementLoop: for (CompetenceElement competenceElement : competenceElements) {
             Log.d(TAG, competenceElement.name);
             if (competenceElement.triggerableName == null) {
@@ -57,7 +58,7 @@ public class Plan {
             for (ActionPattern actionPattern : actionPatterns) {
                 if (competenceElement.triggerableName.equals(actionPattern.name)) {
                     competenceElement.triggerableElement = actionPattern;
-                    Log.d(TAG, "matched!");
+                    Log.d(TAG, String.format("matched! %s", actionPattern.toString()));
                     continue elementLoop;
                 }
             }
@@ -67,7 +68,7 @@ public class Plan {
             for (Competence competence : competences) {
                 if (competenceElement.triggerableName.equals(competence.name)) {
                     competenceElement.triggerableElement = competence;
-                    Log.d(TAG, "matched!");
+                    Log.d(TAG, String.format("matched! %s", competence.toString()));
                     continue elementLoop;
                 }
             }
@@ -75,7 +76,39 @@ public class Plan {
         }
     }
 
+    public void linkCompetences() {
+        Log.d(TAG, "Linking competences");
+        for (Competence competence : competences) {
+            Log.d(TAG, competence.name);
+
+            List<CompetenceElement> actualCompetenceElements = new ArrayList();
+
+            if (competence.competenceElements.size() == 0) {
+                Log.d(TAG, "... has no elements!");
+                continue;
+            } else {
+                Log.d(TAG, String.format("... has %d elements!", competence.competenceElements.size()));
+            }
+
+            competenceLoop: for (CompetenceElement tempCompetenceElement : competence.competenceElements) {
+                for (CompetenceElement competenceElement : competenceElements) {
+                    if (competenceElement.name.equals(tempCompetenceElement.name)) {
+                        actualCompetenceElements.add(competenceElement);
+                        Log.d(TAG, "Matched "+competenceElement.name);
+                        continue competenceLoop;
+                    }
+                }
+
+                Log.d(TAG, "Did not match "+tempCompetenceElement.name);
+            }
+
+            competence.competenceElements = actualCompetenceElements;
+
+        }
+    }
+
     public void linkDriveElements() {
+        Log.d(TAG, "Linking drive elements");
         elementLoop: for (DriveElement driveElement : driveElements) {
             Log.d(TAG, driveElement.name);
             if (driveElement.triggerableName == null) {
@@ -108,7 +141,8 @@ public class Plan {
     }
 
     public void linkDriveCollections() {
-        elementLoop: for (DriveCollection driveCollection : driveCollections) {
+        Log.d(TAG, "Linking drive collections");
+        for (DriveCollection driveCollection : driveCollections) {
             Log.d(TAG, driveCollection.name);
 
             List<DriveElement> actualDriveElements = new ArrayList();

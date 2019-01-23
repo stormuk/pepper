@@ -1,9 +1,17 @@
 package com.storm.posh.planner.planelements;
 
-// file was called 'Condition' but class was still called 'Sense'
+public class Sense {
+    public String name;
+    public Double value;
+    public String comparator;
 
-public class Sense extends PlanComparable {
+    public String toString() {
+        return String.format("%s { name='%s' value=%f comparator='%s' }", this.getClass().getSimpleName(), name, value, comparator);
+    }
+
     public Sense(String name, String value, String comparator) {
-        super(name, value, comparator);
+        this.name = name;
+        this.value = Double.valueOf(value);
+        this.comparator = comparator;
     }
 }

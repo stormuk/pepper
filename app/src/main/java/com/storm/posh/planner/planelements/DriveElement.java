@@ -4,10 +4,11 @@ import java.util.List;
 import java.util.Objects;
 
 public class DriveElement extends PlanElement {
-    public List<Sense> senses;
-    public String checkTime;
+    public List<Sense> triggers;
+    public Double checkTime = 0.0;
     public String triggerableName;
     public PlanElement triggerableElement;
+    public long nextCheck = 0;
 
     @Override
     public String toString() {
@@ -16,23 +17,27 @@ public class DriveElement extends PlanElement {
                 " triggerableName='" + name + '\'' +
                 " triggerableElement='" + Objects.toString(triggerableElement)+ '\'' +
                 " checkTime='" + checkTime + '\'' +
-                " senses=" + Objects.toString(senses)+
+                " triggers=" + Objects.toString(triggers)+
                 " }";
     }
 
-    public DriveElement(String name, List senses, String checkTime, String triggerableName) {
+    public DriveElement(String name, List<Sense> triggers, String checkTime, String triggerableName) {
         super(name);
-        this.senses = senses;
-        this.checkTime = checkTime;
+        this.triggers = triggers;
         this.triggerableName = triggerableName;
+
+        if (checkTime != null) {
+            this.checkTime = Double.valueOf(checkTime);
+        }
     }
 
-    public DriveElement(String name, List senses, String checkTime, PlanElement triggerableElement) {
-        super(name);
-        this.senses = senses;
-        this.checkTime = checkTime;
+    public DriveElement(String name, List<Sense> triggers, String checkTime, PlanElement triggerableElement) {
+        this(name, triggers, checkTime, triggerableElement.name);
         this.triggerableElement = triggerableElement;
-        this.triggerableName = triggerableElement.name;
+    }
+
+    public void updateNextCheck(long time) {
+        this.nextCheck = time + checkTime.longValue();
     }
 }
 
