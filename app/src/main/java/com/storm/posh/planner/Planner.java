@@ -1,25 +1,160 @@
 package com.storm.posh.planner;
 
 import android.content.res.XmlResourceParser;
+import android.os.Debug;
+import android.util.Log;
 
-import com.storm.experiment1.R;
 import com.storm.posh.planner.planelements.DriveCollection;
+import com.storm.posh.planner.planelements.Plan;
 import com.storm.posh.planner.planelements.Sense;
 
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 public class Planner {
-    private volatile List<DriveCollection> drives  = new LinkedList<>();
+    private static final String TAG = Planner.class.getSimpleName();
+    private volatile Plan plan;
 
-
-    public void awake() {
-
-    }
+    public BehaviourLibrary behaviourLibrary;
 
     public void start(XmlResourceParser planFile) {
-        drives = new XMLPlanReader().readFile(planFile);
+        Log.d(TAG, "Starting Planner");
+        plan = new XMLPlanReader().readFile(planFile);
+        Log.d(TAG, "Got plan:");
+        Log.d(TAG, plan.toString());
+
+        plan.linkCompetenceElements();
+        plan.linkDriveElements();
+        plan.linkDriveCollections();
+        plan.prioritiseDrives();
     }
+
+    public void update() {
+        drivesHandler();
+    }
+
+    private void drivesHandler() {
+        int currentPriority = -1;
+
+        for (DriveCollection drive : plan.driveCollections) {
+            // Avoid extra loops for lower priority items.
+            if (currentPriority != -1) {
+                if (currentPriority < drive.priority) {
+                    continue;
+                }
+            }
+
+            if (currentPriority == -1 || currentPriority == drive.priority) {
+                if (drive.senses.size() != 0) {
+                    int numSensesNeeded = 0;
+
+                    for (Sense sense : drive.senses) {
+                        numSensesNeeded = checkSense(numSensesNeeded, sense);
+                    }
+
+                    if (numSensesNeeded == drive.senses.size()) {
+//                        ABOD3_Bridge.getInstance().alertForElement(drive.name, "D");
+                        driveElementsHandler(drive.driveElements);
+                        currentPriority = drive.priority;
+                    }
+
+                } else {
+//                        ABOD3_Bridge.getInstance().alertForElement(drive.name, "D");
+                    driveElementsHandler(drive.driveElements);
+                    currentPriority = drive.priority;
+                }
+            }
+        }
+    }
+
+    private void driveElementsHandler(List driveElements) {
+
+    }
+
+    private int checkSense(int numTriggersTrue, Sense sense) {
+        switch (sense.comparator) {
+            case "bool":
+                if (SenseIsBool(sense)) {
+                    numTriggersTrue = numTriggersTrue + 1;
+                }
+                break;
+
+            case "=":
+                if (SenseIsEqual(sense)) {
+                    numTriggersTrue = numTriggersTrue + 1;
+                }
+                break;
+
+            case "<":
+                if (SenseIsLessThan(sense)) {
+                    numTriggersTrue = numTriggersTrue + 1;
+                }
+                break;
+
+            case "<=":
+                if (SenseIsLessThanOrEqual(sense)) {
+                    numTriggersTrue = numTriggersTrue + 1;
+                }
+                break;
+
+            case ">=":
+                if (SenseIsGreaterThanOrEqual(sense)) {
+                    numTriggersTrue = numTriggersTrue + 1;
+                }
+                break;
+
+            case ">":
+                if (SenseIsGreaterThan(sense)) {
+                    numTriggersTrue = numTriggersTrue + 1;
+                }
+                break;
+
+            default:
+                break;
+        }
+
+        return numTriggersTrue;
+    }
+
+    private boolean SenseIsBool(Sense sense) {
+        if (sense.value == 1) {
+            if (behaviourLibrary.checkBooleanSense(sense)) {
+                return true;
+            }
+        } else if (sense.value == 0) {
+            if (!behaviourLibrary.checkBooleanSense(sense)) {
+                return true;
+            }
+        } else {
+            Log.d(TAG, "Sense: "+sense.toString()+" expected output should be boolean 0 or 1");
+        }
+
+        return false;
+    }
+
+    private boolean SenseIsEqual(Sense sense) {
+        return (behaviourLibrary.checkDoubleSense(sense) == sense.value);
+    }
+
+    private boolean SenseIsLessThan(Sense sense) {
+        return (behaviourLibrary.checkDoubleSense(sense) < sense.value);
+    }
+
+    private boolean SenseIsLessThanOrEqual(Sense sense) {
+        return (behaviourLibrary.checkDoubleSense(sense) <= sense.value);
+    }
+
+    private boolean SenseIsGreaterThan(Sense sense) {
+        return (behaviourLibrary.checkDoubleSense(sense) > sense.value);
+    }
+    private boolean SenseIsGreaterThanOrEqual(Sense sense) {
+        return (behaviourLibrary.checkDoubleSense(sense) >= sense.value);
+    }
+
 }
 
 /*
@@ -195,59 +330,7 @@ public class Planner : MonoBehaviour
 
         return numTriggersTrue;
     }
-    private bool SenseIsBool(Sense Sense)
-    {
-        try
-        {
-            if (Sense.Value == 1) // If we are checking for false
-            {
-                if (behaviourLibrary.CheckBoolSense(Sense))
-                {
-                    return true;
-                }
-            }
-            else if (Sense.Value == 0) // If we are checking for false
-            {
-                if (!(behaviourLibrary.CheckBoolSense(Sense)))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                Debug.LogError("Sense: " + Sense.Name + " expected output should be 0 or 1");
-            }
-        }
-        catch (System.Exception error)
-        {
-            Debug.LogError("Checking Sense: " + Sense.Name + " produced error: " + error);
-        }
-        return false;
-    }
 
-    private bool SenseIsEqual(Sense trigger)
-    {
-        return (behaviourLibrary.CheckDoubleSense(trigger) == trigger.Value);
-    }
-
-    private bool SenseIsLessThan(Sense trigger)
-    {
-        return (behaviourLibrary.CheckDoubleSense(trigger) < trigger.Value);
-    }
-
-    private bool SenseIsLessThanAndEqual(Sense trigger)
-    {
-        return (behaviourLibrary.CheckDoubleSense(trigger) <= trigger.Value);
-    }
-
-    private bool SenseIsGreaterThan(Sense trigger)
-    {
-        return (behaviourLibrary.CheckDoubleSense(trigger) > trigger.Value);
-    }
-    private bool SenserIsGreaterThanAndEqual(Sense trigger)
-    {
-        return (behaviourLibrary.CheckDoubleSense(trigger) >= trigger.Value);
-    }
 
     private void CompetenceHandler(Competence competence)
     {

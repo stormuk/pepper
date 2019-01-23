@@ -1,6 +1,39 @@
 package com.storm.posh.planner.planelements;
 
+import java.util.List;
+import java.util.Objects;
+
 public class DriveElement extends PlanElement {
+    public List<Sense> senses;
+    public String checkTime;
+    public String triggerableName;
+    public PlanElement triggerableElement;
+
+    @Override
+    public String toString() {
+        return "DriveElement {" +
+                " name='" + name + '\'' +
+                " triggerableName='" + name + '\'' +
+                " triggerableElement='" + Objects.toString(triggerableElement)+ '\'' +
+                " checkTime='" + checkTime + '\'' +
+                " senses=" + Objects.toString(senses)+
+                " }";
+    }
+
+    public DriveElement(String name, List senses, String checkTime, String triggerableName) {
+        super(name);
+        this.senses = senses;
+        this.checkTime = checkTime;
+        this.triggerableName = triggerableName;
+    }
+
+    public DriveElement(String name, List senses, String checkTime, PlanElement triggerableElement) {
+        super(name);
+        this.senses = senses;
+        this.checkTime = checkTime;
+        this.triggerableElement = triggerableElement;
+        this.triggerableName = triggerableElement.name;
+    }
 }
 
 /*

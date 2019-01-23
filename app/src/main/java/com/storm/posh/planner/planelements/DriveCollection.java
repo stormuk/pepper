@@ -1,6 +1,30 @@
 package com.storm.posh.planner.planelements;
 
+import java.util.List;
+import java.util.Objects;
+
 public class DriveCollection extends PlanElement {
+    public List<Sense> senses;
+    public List<DriveElement> driveElements;
+    public Integer priority = 0;
+
+    @Override
+    public String toString() {
+        return "DriveElement {" +
+                " name='" + name + '\'' +
+                " priority=" + priority.toString() +
+                " senses=" + Objects.toString(senses)+
+                " driveElements=" + Objects.toString(driveElements)+
+                " }";
+    }
+
+    public DriveCollection(String name, List senses, List driveElements, Integer priority) {
+        super(name);
+        this.senses = senses;
+        this.driveElements = driveElements;
+        this.priority = priority;
+    }
+
 }
 
 /*

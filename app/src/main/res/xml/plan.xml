@@ -10,13 +10,13 @@
     </ActionPatterns>
     <CompetenceElements>
         <CompetenceElement name="CE-WaveLeft" triggers="AP-WaveLeft">
-            <Sense name="HaveWavedLeft" value="0" comperator="bool"></Sense>
+            <Sense name="HaveWavedLeft" value="0" comparator="bool"></Sense>
         </CompetenceElement>
     </CompetenceElements>
     <Competences>
         <Competence name="C-WaveLeft">
             <Goals>
-                <Goal name="HaveWavedLeft" value="1" comperator="bool"></Goal>
+                <Goal name="HaveWavedLeft" value="1" comparator="bool"></Goal>
             </Goals>
             <CompetenceElements>
                 <CompetenceElement name="CE-WaveLeft"></CompetenceElement>
@@ -26,12 +26,12 @@
     <DriveElements>
         <DriveElement name="DE-WaveLeft" triggers="C-WaveLeft" checkTime="0">
             <Senses>
-                <Sense name="HaveWavedLeft" value="0" comperator="bool"></Sense>
+                <Sense name="HaveWavedLeft" value="0" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
         <DriveElement name="DE-WaveRight" triggers="AP-WaveRight" checkTime="0">
             <Senses>
-                <Sense name="HaveWavedRight" value="0" comperator="bool"></Sense>
+                <Sense name="HaveWavedRight" value="0" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
     </DriveElements>

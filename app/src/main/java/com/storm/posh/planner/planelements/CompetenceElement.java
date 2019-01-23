@@ -1,6 +1,36 @@
 package com.storm.posh.planner.planelements;
 
-public class CompetenceElement {
+import java.util.List;
+import java.util.Objects;
+
+public class CompetenceElement extends PlanElement {
+    public List senses;
+    public PlanElement triggerableElement;
+    public String triggerableName;
+
+    private static final String TAG = CompetenceElement.class.getSimpleName();
+
+    @Override
+    public String toString() {
+        return String.format(
+           "CompetenceElement { name='%s' senses='%s' triggerableName='%s' triggerableElement='%s' }",
+           name, Objects.toString(senses), triggerableName, Objects.toString(triggerableElement)
+        );
+    }
+
+    public CompetenceElement(String name, List<Sense> senses, String triggerableName) {
+        super(name);
+        this.senses = senses;
+        this.triggerableName = triggerableName;
+    }
+
+
+    public CompetenceElement(String name, List<Sense> senses, PlanElement triggerableElement) {
+        super(name);
+        this.senses = senses;
+        this.triggerableElement = triggerableElement;
+        this.triggerableName = triggerableElement.name;
+    }
 }
 
 /*

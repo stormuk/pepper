@@ -1,6 +1,26 @@
 package com.storm.posh.planner.planelements;
 
+import java.util.List;
+import java.util.Objects;
+
 public class Competence extends PlanElement {
+    public List<Goal> goals;
+    public List<CompetenceElement> competenceElements;
+
+    @Override
+    public String toString() {
+        return "DriveElement {" +
+                " name='" + name + '\'' +
+                " goals=" + Objects.toString(goals)+
+                " competenceElements=" + Objects.toString(competenceElements)+
+                " }";
+    }
+
+    public Competence(String name, List goals, List competenceElements) {
+        super(name);
+        this.goals = goals;
+        this.competenceElements = competenceElements;
+    }
 }
 
 /*

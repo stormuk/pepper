@@ -1,9 +1,18 @@
 package com.storm.posh.planner.planelements;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ActionPattern extends PlanElement {
     public List<Action> actions;
+
+    @Override
+    public String toString() {
+        return "ActionPattern{" +
+                "actions=" + Objects.toString(actions )+
+                ", name='" + name + '\'' +
+                '}';
+    }
 
     public ActionPattern(String name, List actions) {
         super(name);

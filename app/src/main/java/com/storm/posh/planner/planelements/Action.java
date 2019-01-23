@@ -1,11 +1,27 @@
 package com.storm.posh.planner.planelements;
 
+import android.util.Log;
+
+import com.storm.posh.planner.XMLPlanReader;
+
+import java.util.Objects;
+
 public class Action extends PlanElement {
-    public double timeToComplete = 0;
+    public double timeToComplete;
+
+    private static final String TAG = Action.class.getSimpleName();
+
+    @Override
+    public String toString() {
+        return "Action{" +
+                "timeToComplete=" + Objects.toString(timeToComplete) +
+                ", name='" + name + '\'' +
+                '}';
+    }
 
     public Action(String name, Double timeToComplete) {
         super(name);
-        this.timeToComplete = timeToComplete;
+        this.timeToComplete = Double.valueOf(timeToComplete);
     }
 }
 

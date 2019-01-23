@@ -1,121 +1,441 @@
 package com.storm.posh.planner;
 
-import android.content.res.XmlResourceParser;
-import android.util.Xml;
+import android.util.Log;
 
 import com.storm.posh.planner.planelements.Action;
 import com.storm.posh.planner.planelements.ActionPattern;
+import com.storm.posh.planner.planelements.Competence;
+import com.storm.posh.planner.planelements.CompetenceElement;
+import com.storm.posh.planner.planelements.DriveCollection;
+import com.storm.posh.planner.planelements.DriveElement;
+import com.storm.posh.planner.planelements.Goal;
+import com.storm.posh.planner.planelements.Plan;
+import com.storm.posh.planner.planelements.Sense;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class XMLPlanReader {
+    private static final String TAG = XMLPlanReader.class.getSimpleName();
+
     // We don't use namespaces
     private static final String ns = null;
 
-    public List readFile(XmlResourceParser plan) throws XmlPullParserException, IOException {
+    public Plan readFile(XmlPullParser parser) {
         try {
-            XmlPullParser parser = Xml.newPullParser(plan);
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-//            parser.setInput(in, null);
-            parser.nextTag();
+            parser.next();
+            parser.next();
             return readPlan(parser);
+        } catch (Exception e) {
+            Log.d(TAG, e.toString());
         }
+
+        return new Plan();
     }
 
-    private List readPlan(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private Plan readPlan(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading plan");
         List actionPatterns = new ArrayList();
+        List competenceElements = new ArrayList();
+        List competences = new ArrayList();
+        List driveElements = new ArrayList();
+        List driveCollections = new ArrayList();
 
         parser.require(XmlPullParser.START_TAG, ns, "Plan");
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.getEventType() != XmlPullParser.START_TAG) {
-                continue;
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Plan"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readPlan: found %s", tag));
+
+                if (tag.equals("ActionPatterns")) {
+                    actionPatterns = readActionPatterns(parser);
+                } else if (tag.equals("CompetenceElements")) {
+                    competenceElements = readCompetenceElements(parser);
+                } else if (tag.equals("Competences")) {
+                    competences = readCompetences(parser);
+                } else if (tag.equals("DriveElements")) {
+                    driveElements = readDriveElements(parser);
+                } else if (tag.equals("Drives")) {
+                    driveCollections = readDriveCollections(parser);
+                }
             }
-            String name = parser.getName();
-            // Starts by looking for the entry tag
-            if (name.equals("ActionPatterns")) {
-                actionPatterns = readActionPatterns(parser);
-            } else {
-                skip(parser);
-            }
+
+            eventType = parser.next();
+            tag = parser.getName();
         }
-        return entries;
+
+
+        Plan plan = new Plan(actionPatterns, competenceElements, competences, driveElements, driveCollections);
+
+        return plan;
     }
 
+
     private List readActionPatterns(XmlPullParser parser) throws XmlPullParserException, IOException {
-        List entries = new ArrayList();
+        Log.d(TAG, "Reading action patterns");
+        List actionPatterns = new ArrayList();
 
         parser.require(XmlPullParser.START_TAG, ns, "ActionPatterns");
 
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.getEventType() != XmlPullParser.START_TAG) {
-                continue;
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("ActionPatterns"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readActionPatterns: found %s", tag));
+
+                if (tag.equals("ActionPattern")) {
+                    actionPatterns.add(readActionPattern(parser));
+                }
             }
 
-            String name = parser.getName();
-
-            if (name.equals('ActionPattern')) {
-                entries.add(readActionPattern(parser));
-            } else {
-                skip(parser);
-            }
+            eventType = parser.next();
+            tag = parser.getName();
         }
 
-        return entries;
+        return actionPatterns;
     }
 
     // Parses the contents of an entry. If it encounters a title, summary, or link tag, hands them off
     // to their respective "read" methods for processing. Otherwise, skips the tag.
     private ActionPattern readActionPattern(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading action pattern");
         parser.require(XmlPullParser.START_TAG, ns, "ActionPattern");
-
-        String name = parser.getAttributeValue(null, 'name');
+        String actionPatternName = parser.getAttributeValue(null, "name");
         List actions = new ArrayList();
 
-        while (parser.next() != XmlPullParser.END_TAG) {
-            if (parser.getEventType() != XmlPullParser.START_TAG) {
-                continue;
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("ActionPattern"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readActionPattern: found %s", tag));
+
+                if (tag.equals("Action")) {
+                    actions.add(readAction(parser));
+                }
             }
 
-            if (parser.getName().equals("Action")) {
-                actions.add(readAction(parser));
-            } else {
-                skip(parser);
-            }
+            eventType = parser.next();
+            tag = parser.getName();
         }
 
-        return new ActionPattern(name, actions);
+        return new ActionPattern(actionPatternName, actions);
     }
 
     private Action readAction(XmlPullParser parser) throws XmlPullParserException, IOException {
-        parser.require(XmlPullParser.START_TAG, ns, 'Action');
+        Log.d(TAG, "Reading action");
+        parser.require(XmlPullParser.START_TAG, ns, "Action");
+        String name = parser.getAttributeValue(null, "name");
 
-        String name = parser.getAttributeValue(null, 'name');
-        Double timeToComplete = parser.getAttributeValue(null, 'timeToComplete');
+        Double timeToComplete = 0.0;
+        String actionTimeToComplete = parser.getAttributeValue(null, "timeToComplete");
+
+        if (actionTimeToComplete != null) {
+            timeToComplete = Double.valueOf(actionTimeToComplete);
+        }
 
         return new Action(name, timeToComplete);
     }
 
-    private void skip(XmlPullParser parser) throws XmlPullParserException, IOException {
-        if (parser.getEventType() != XmlPullParser.START_TAG) {
-            throw new IllegalStateException();
-        }
-        int depth = 1;
-        while (depth != 0) {
-            switch (parser.next()) {
-                case XmlPullParser.END_TAG:
-                    depth--;
-                    break;
-                case XmlPullParser.START_TAG:
-                    depth++;
-                    break;
+    private List readCompetenceElements(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading competence elements");
+        List competenceElements = new ArrayList();
+
+        parser.require(XmlPullParser.START_TAG, ns, "CompetenceElements");
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("CompetenceElements"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readCompetenceElements: found %s", tag));
+
+                if (tag.equals("CompetenceElement")) {
+                    competenceElements.add(readCompetenceElement(parser));
+                }
             }
+
+            eventType = parser.next();
+            tag = parser.getName();
         }
+
+        return competenceElements;
+    }
+
+    // Parses the contents of an entry. If it encounters a title, summary, or link tag, hands them off
+    // to their respective "read" methods for processing. Otherwise, skips the tag.
+    private CompetenceElement readCompetenceElement(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading competence element");
+        parser.require(XmlPullParser.START_TAG, ns, "CompetenceElement");
+
+        String competenceElementName = parser.getAttributeValue(null, "name");
+        String triggerableName = parser.getAttributeValue(null, "triggers");
+        List senses = new ArrayList();
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("CompetenceElement"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readCompetenceElement: found %s", tag));
+
+                if (tag.equals("Sense")) {
+                    senses.add(readSense(parser));
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return new CompetenceElement(competenceElementName, senses, triggerableName);
+    }
+
+    private List readSenses(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading senses");
+        List senses = new ArrayList();
+
+        parser.require(XmlPullParser.START_TAG, ns, "Senses");
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Senses"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readSenses: found %s", tag));
+
+                if (tag.equals("Sense")) {
+                    senses.add(readSense(parser));
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return senses;
+    }
+
+    private Sense readSense(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading sense");
+        parser.require(XmlPullParser.START_TAG, ns, "Sense");
+
+        String name = parser.getAttributeValue(null, "name");
+        String value = parser.getAttributeValue(null, "value");
+        String comparator = parser.getAttributeValue(null, "comparator");
+
+        return new Sense(name, value, comparator);
+    }
+
+    private List readCompetences(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading competences");
+        List competences = new ArrayList();
+
+        parser.require(XmlPullParser.START_TAG, ns, "Competences");
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Competences"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readCompetences: found %s", tag));
+
+                if (tag.equals("Competence")) {
+                    competences.add(readCompetence(parser));
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return competences;
+    }
+
+    private Competence readCompetence(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading competence");
+        parser.require(XmlPullParser.START_TAG, ns, "Competence");
+
+        String competenceName = parser.getAttributeValue(null, "name");
+        List<Goal> goals = new ArrayList<>();
+        List<CompetenceElement> competenceElements = new ArrayList<>();
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Competence"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readCompetence: found %s", tag));
+
+                if (tag.equals("Goals")) {
+                    goals = readGoals(parser);
+                } else if (tag.equals("CompetenceElements")) {
+                    competenceElements = readCompetenceElements(parser);
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return new Competence(competenceName, goals, competenceElements);
+    }
+
+    private List readGoals(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading goals");
+        List goals = new ArrayList();
+
+        parser.require(XmlPullParser.START_TAG, ns, "Goals");
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Goals"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readGoals: found %s", tag));
+
+                if (tag.equals("Goal")) {
+                    goals.add(readGoal(parser));
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return goals;
+    }
+
+    private Goal readGoal(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading goal");
+        parser.require(XmlPullParser.START_TAG, ns, "Goal");
+
+        String name = parser.getAttributeValue(null, "name");
+        String value = parser.getAttributeValue(null, "value");
+        String comparator = parser.getAttributeValue(null, "comparator");
+
+        return new Goal(name, value, comparator);
+    }
+
+    private List readDriveElements(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading drive elements");
+        List driveElements = new ArrayList();
+
+        parser.require(XmlPullParser.START_TAG, ns, "DriveElements");
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("DriveElements"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readDriveElements: found %s", tag));
+
+                if (tag.equals("DriveElement")) {
+                    driveElements.add(readDriveElement(parser));
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return driveElements;
+    }
+
+    private DriveElement readDriveElement(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading drive element");
+        parser.require(XmlPullParser.START_TAG, ns, "DriveElement");
+
+        String driveElementName = parser.getAttributeValue(null, "name");
+        String checkTime = parser.getAttributeValue(null, "checkTime");
+        String triggerableName = parser.getAttributeValue(null, "triggers");
+        List<Sense> senses = new ArrayList();
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("DriveElement"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readDriveElement: found %s", tag));
+
+                if (tag.equals("Senses")) {
+                    senses = readSenses(parser);
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return new DriveElement(driveElementName, senses, checkTime, triggerableName);
+    }
+
+    private List readDriveCollections(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading drives");
+        List driveCollections = new ArrayList();
+
+        parser.require(XmlPullParser.START_TAG, ns, "Drives");
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Drives"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readDrives: found %s", tag));
+
+                if (tag.equals("Drive")) {
+                    driveCollections.add(readDriveCollection(parser));
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return driveCollections;
+    }
+
+    private DriveCollection readDriveCollection(XmlPullParser parser) throws XmlPullParserException, IOException {
+        Log.d(TAG, "Reading drive");
+        parser.require(XmlPullParser.START_TAG, ns, "Drive");
+
+        String driveCollectionName = parser.getAttributeValue(null, "name");
+        String drivePriority = parser.getAttributeValue(null, "priority");
+        List<Sense> senses = new ArrayList();
+        List<DriveElement> driveElements = new ArrayList();
+
+        Integer priority = 0;
+        if (drivePriority != null) {
+            priority = Integer.valueOf(drivePriority);
+        }
+
+        String tag = parser.getName();
+        int eventType = parser.getEventType();
+
+        while (!(eventType == XmlPullParser.END_TAG && tag.equals("Drive"))) {
+            if (eventType == XmlPullParser.START_TAG) {
+                Log.d(TAG, String.format("readDriveCollection: found %s", tag));
+
+                if (tag.equals("Senses")) {
+                    senses = readSenses(parser);
+                } else if (tag.equals("DriveElements")) {
+                    driveElements = readDriveElements(parser);
+                }
+            }
+
+            eventType = parser.next();
+            tag = parser.getName();
+        }
+
+        return new DriveCollection(driveCollectionName, senses, driveElements, priority);
     }
 }
 
@@ -145,69 +465,6 @@ public class XMLPlanReader
         return drives;
     }
 
-    private static void LinkCompetenceElements(ref List<ActionPattern> actionPatterns, ref List<CompetenceElement> competenceElements, ref List<Competence> competences)
-    {
-        foreach (CompetenceElement competenceElement in competenceElements)
-        {
-            bool elemFound = false;
-
-            foreach (ActionPattern actionPattern in actionPatterns)
-            {
-                if (competenceElement.TriggerableElement.Name.Equals(actionPattern.Name))
-                {
-                    competenceElement.TriggerableElement = actionPattern;
-                    elemFound = true; ;
-                }
-                if (elemFound)
-                    break;
-            }
-            if (!elemFound)
-            {
-                foreach (Competence competence in competences)
-                {
-                    if (competenceElement.TriggerableElement.Name.Equals(competence.Name))
-                    {
-                        competenceElement.TriggerableElement = competence;
-                        elemFound = true; ;
-                    }
-                    if (elemFound)
-                        break;
-                }
-            }
-        }
-    }
-
-    private static void LinkDriveElements(ref List<ActionPattern> actionPatterns, ref List<Competence> competences, ref List<DriveElement> driveElements)
-    {
-        foreach (DriveElement driveElement in driveElements)
-        {
-            bool elemFound = false;
-
-            foreach (ActionPattern actionPattern in actionPatterns)
-            {
-                if (driveElement.TriggerableElement.Name.Equals(actionPattern.Name))
-                {
-                    driveElement.TriggerableElement = actionPattern;
-                    elemFound = true; ;
-                }
-                if (elemFound)
-                    break;
-            }
-            if (!elemFound)
-            {
-                foreach (Competence competence in competences)
-                {
-                    if (driveElement.TriggerableElement.Name.Equals(competence.Name))
-                    {
-                        driveElement.TriggerableElement = competence;
-                        elemFound = true; ;
-                    }
-                    if (elemFound)
-                        break;
-                }
-            }
-        }
-    }
 
     private List<ActionPattern> ExtractActionPatterns(XmlDocument xmlDoc)
     {
