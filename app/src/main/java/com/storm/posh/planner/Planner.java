@@ -39,6 +39,9 @@ public class Planner {
         return drivesHandler();
     }
 
+    public void reset() {
+        behaviourLibrary.reset();
+    }
 
 
     private boolean drivesHandler() {

@@ -11,6 +11,11 @@ public class BehaviourLibrary {
     private boolean haveWavedLeft = false;
     private boolean haveWavedRight = false;
 
+    public void reset() {
+        haveWavedLeft = false;
+        haveWavedRight = false;
+    }
+
     public boolean getBooleanSense(Sense sense) {
         Log.d(TAG, String.format("Getting boolean sense: %s", sense.name));
         switch(sense.name) {
