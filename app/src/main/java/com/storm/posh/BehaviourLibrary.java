@@ -1,9 +1,9 @@
-package com.storm.posh.planner;
+package com.storm.posh;
 
 import android.util.Log;
 
-import com.storm.posh.planner.planelements.Action;
-import com.storm.posh.planner.planelements.Sense;
+import com.storm.posh.plan.planelements.action.ActionEvent;
+import com.storm.posh.plan.planelements.Sense;
 
 public class BehaviourLibrary {
     private static final String TAG = BehaviourLibrary.class.getSimpleName();
@@ -17,8 +17,8 @@ public class BehaviourLibrary {
     }
 
     public boolean getBooleanSense(Sense sense) {
-        Log.d(TAG, String.format("Getting boolean sense: %s", sense.name));
-        switch(sense.name) {
+        Log.d(TAG, String.format("Getting boolean sense: %s", sense));
+        switch(sense.getNameOfElement()) {
             case "HaveWavedLeft":
                 Log.d(TAG, String.format("Sense value is: %b", haveWavedLeft));
                 return haveWavedLeft;
@@ -29,12 +29,12 @@ public class BehaviourLibrary {
         return false;
     }
     public double getDoubleSense(Sense sense) {
-        Log.d(TAG, "Getting double sense: "+sense.name);
+        Log.d(TAG, "Getting double sense: "+sense);
         return 3.6;
     }
-    public void executeAction(Action action) {
-        Log.d(TAG, "Performing action: "+action.name);
-        switch(action.name) {
+    public void executeAction(ActionEvent action) {
+        Log.d(TAG, "Performing action: "+action);
+        switch(action.getNameOfElement()) {
             case "WaveLeft":
                 waveLeft();
                 break;

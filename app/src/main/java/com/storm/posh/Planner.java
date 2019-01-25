@@ -1,17 +1,17 @@
-package com.storm.posh.planner;
+package com.storm.posh;
 
-import android.content.res.XmlResourceParser;
 import android.util.Log;
 
-import com.storm.posh.planner.planelements.Action;
-import com.storm.posh.planner.planelements.ActionPattern;
-import com.storm.posh.planner.planelements.Competence;
-import com.storm.posh.planner.planelements.CompetenceElement;
-import com.storm.posh.planner.planelements.DriveCollection;
-import com.storm.posh.planner.planelements.DriveElement;
-import com.storm.posh.planner.planelements.Plan;
-import com.storm.posh.planner.planelements.PlanElement;
-import com.storm.posh.planner.planelements.Sense;
+import com.storm.posh.plan.Plan;
+import com.storm.posh.plan.planelements.Sense;
+import com.storm.posh.plan.planelements.TimeUnits;
+import com.storm.posh.plan.planelements.PlanElement;
+import com.storm.posh.plan.planelements.action.ActionEvent;
+import com.storm.posh.plan.planelements.drives.DriveCollection;
+import com.storm.posh.plan.planelements.drives.DriveElement;
+import com.storm.posh.plan.planelements.action.ActionPattern;
+import com.storm.posh.plan.planelements.competence.Competence;
+import com.storm.posh.plan.planelements.competence.CompetenceElement;
 
 import java.util.Calendar;
 import java.util.List;
@@ -22,17 +22,11 @@ public class Planner {
 
     public BehaviourLibrary behaviourLibrary;
 
-    public void start(XmlResourceParser planFile) {
+    public void start() {
         Log.d(TAG, "Starting Planner");
-        plan = new XMLPlanReader().readFile(planFile);
+        plan = Plan.getInstance();
         Log.d(TAG, "Got plan:");
         Log.d(TAG, plan.toString());
-
-        plan.linkCompetenceElements();
-        plan.linkCompetences();
-        plan.linkDriveElements();
-        plan.linkDriveCollections();
-        plan.prioritiseDrives();
     }
 
     public boolean update() {
@@ -43,37 +37,41 @@ public class Planner {
         behaviourLibrary.reset();
     }
 
+    public List<DriveCollection> driveCollections() {
+        return plan.getDriveCollections();
+    }
+
 
     private boolean drivesHandler() {
-        int validDrivesCount = plan.driveCollections.size();
+        int validDrivesCount = plan.getDriveCollections().size();
         Log.d(TAG, String.format("Starting drives: %d", validDrivesCount));
         int currentPriority = -1;
 
-        for (DriveCollection drive : plan.driveCollections) {
-            Log.d(TAG, String.format("Considering: %s", drive.name));
+        for (DriveCollection drive : plan.getDriveCollections()) {
+            Log.d(TAG, String.format("Considering: %s", drive));
 
             // Avoid extra loops for lower priority items.
             if (currentPriority != -1) {
-                if (currentPriority < drive.priority) {
+                if (currentPriority < drive.getPriority()) {
                     Log.d(TAG, "Priority too low");
                     continue;
                 }
             }
 
-            if (currentPriority == -1 || currentPriority == drive.priority) {
-                if (drive.goals.size() != 0) {
+            if (currentPriority == -1 || currentPriority == drive.getPriority()) {
+                if (drive.getGoals().size() != 0) {
                     Log.d(TAG, "Has goals, checking...");
                     int numGoalsMet = 0;
 
-                    for (Sense goal : drive.goals) {
+                    for (Sense goal : drive.getGoals()) {
                         numGoalsMet = checkSense(numGoalsMet, goal);
                     }
 
-                    if (numGoalsMet != drive.goals.size()) {
+                    if (numGoalsMet != drive.getGoals().size()) {
                         Log.d(TAG, "Goals unmet, running drive elements");
 //                        ABOD3_Bridge.getInstance().alertForElement(drive.name, "D");
-                        driveElementsHandler(drive.driveElements);
-                        currentPriority = drive.priority;
+                        driveElementsHandler(drive.getDriveElements());
+                        currentPriority = drive.getPriority();
                     } else {
                         Log.d(TAG, String.format("All goals met, skipping."));
                         validDrivesCount -= 1;
@@ -82,8 +80,8 @@ public class Planner {
                 } else {
                     Log.d(TAG, "No goals to meet, running drive elements");
 //                        ABOD3_Bridge.getInstance().alertForElement(drive.name, "D");
-                    driveElementsHandler(drive.driveElements);
-                    currentPriority = drive.priority;
+                    driveElementsHandler(drive.getDriveElements());
+                    currentPriority = drive.getPriority();
                 }
             }
         }
@@ -97,31 +95,31 @@ public class Planner {
         long time = Calendar.getInstance().getTimeInMillis();
 
         for (DriveElement driveElement : driveElements) {
-            Log.d(TAG, String.format("Running: %s", driveElement.name));
+            Log.d(TAG, String.format("Running: %s", driveElement));
 
-            if (time >= driveElement.nextCheck) {
+            if (time >= driveElement.getNextCheck()) {
                 driveElement.updateNextCheck(time);
 
                 int numTriggersNeeded = 0;
 
-                for (Sense sense : driveElement.triggers) {
+                for (Sense sense : driveElement.getSenses()) {
                     numTriggersNeeded = checkSense(numTriggersNeeded, sense);
                 }
 
-                if (numTriggersNeeded == driveElement.triggers.size()) {
+                if (numTriggersNeeded == driveElement.getSenses().size()) {
 //                    ABOD3_Bridge.getInstance().alertForElement(driveElement.name, "DE");
-                    PlanElement elementToBeTriggered = driveElement.triggerableElement;
+                    PlanElement elementToBeTriggered = driveElement.getTriggeredElement();
                     if (elementToBeTriggered instanceof Competence) {
                         competenceHandler((Competence) elementToBeTriggered);
 
                     } else if (elementToBeTriggered instanceof ActionPattern) {
                         actionPatternHandler((ActionPattern) elementToBeTriggered);
 
-                    } else if (elementToBeTriggered instanceof Action) {
-                        triggerAction((Action) elementToBeTriggered);
+                    } else if (elementToBeTriggered instanceof ActionEvent) {
+                        triggerAction((ActionEvent) elementToBeTriggered);
                     }
                 } else {
-                    Log.d(TAG, String.format("Triggers mismatch: %d v %d", numTriggersNeeded, driveElement.triggers.size()));
+                    Log.d(TAG, String.format("Triggers mismatch: %d v %d", numTriggersNeeded, driveElement.getSenses().size()));
                 }
             } else {
                 Log.d(TAG, "Not due to run yet");
@@ -130,15 +128,15 @@ public class Planner {
     }
 
     private void competenceHandler(Competence competence) {
-        Log.d(TAG, String.format("Running competence: %s", competence.name));
-        Sense goal = competence.goals.get(0); // TODO: Only check one goal?
+        Log.d(TAG, String.format("Running competence: %s", competence));
+        Sense goal = competence.getGoals().get(0); // TODO: Only check one goal?
 
         if (checkSense(0, goal) == 0) {
 //            ABOD3_Bridge.GetInstance().AlertForElement(competence.name, "C");
 
             int numCEActivated = 0;
 
-            for (CompetenceElement competenceElement : competence.competenceElements) {
+            for (CompetenceElement competenceElement : competence.getCompetenceElements()) {
                 if (competenceElementHandler(competenceElement)) {
                     numCEActivated += 1;
                 }
@@ -149,20 +147,20 @@ public class Planner {
     }
 
     private boolean competenceElementHandler(CompetenceElement competenceElement) {
-        Log.d(TAG, String.format("Running competence element: %s", competenceElement.name));
+        Log.d(TAG, String.format("Running competence element: %s", competenceElement));
         int numSensesNeeded = 0;
 
-        Log.d(TAG, String.format("Checking %d senses", competenceElement.senses.size()));
+        Log.d(TAG, String.format("Checking %d senses", competenceElement.getSenses().size()));
 
-        for (Sense sense : competenceElement.senses) {
+        for (Sense sense : competenceElement.getSenses()) {
             numSensesNeeded = checkSense(numSensesNeeded, sense);
         }
 
-        if (numSensesNeeded == competenceElement.senses.size()) {
+        if (numSensesNeeded == competenceElement.getSenses().size()) {
 //            ABOD3_Bridge.GetInstance().AlertForElement(competenceElement.name, "CE");
-            PlanElement elementToBeTriggered = competenceElement.triggerableElement;
+            PlanElement elementToBeTriggered = competenceElement.getTriggeredElement();
 
-            Log.d(TAG, String.format("Triggerable name is %s", competenceElement.triggerableName));
+            Log.d(TAG, String.format("Triggerable name is %s", competenceElement.getTriggeredElement()));
 //            Log.d(TAG, String.format("Triggerable is %s", elementToBeTriggered.toString()));
 
             if (elementToBeTriggered instanceof Competence) {
@@ -171,8 +169,8 @@ public class Planner {
             } else if (elementToBeTriggered instanceof ActionPattern) {
                 actionPatternHandler((ActionPattern) elementToBeTriggered);
 
-            } else if (elementToBeTriggered instanceof Action) {
-                triggerAction((Action) elementToBeTriggered);
+            } else if (elementToBeTriggered instanceof ActionEvent) {
+                triggerAction((ActionEvent) elementToBeTriggered);
             } else {
                 Log.d(TAG, String.format("Unknown type: %s", elementToBeTriggered.getClass().getSimpleName()));
             }
@@ -185,7 +183,7 @@ public class Planner {
 
 
     private void actionPatternHandler(ActionPattern actionPattern) {
-        Log.d(TAG, String.format("Running action pattern: %s", actionPattern.name));
+        Log.d(TAG, String.format("Running action pattern: %s", actionPattern));
 //        ABOD3_Bridge.GetInstance().AlertForElement(, actionPattern.name, "AP");
 
         // TODO: in Andreas' C# code this is started in a 'coroutine' - investigate this
@@ -193,13 +191,13 @@ public class Planner {
     }
 
     private void executeActionPattern(ActionPattern actionPattern, int currentActionIndex) {
-        if (actionPattern.actions.size() <= currentActionIndex) {
+        if (actionPattern.getActionEvents().size() <= currentActionIndex) {
             return;
         }
 
-        Log.d(TAG, String.format("Executing action %d of action pattern: %s", currentActionIndex, actionPattern.name));
-        if (currentActionIndex < actionPattern.actions.size()) {
-            triggerAction(actionPattern.actions.get(currentActionIndex));
+        Log.d(TAG, String.format("Executing action %d of action pattern: %s", currentActionIndex, actionPattern));
+        if (currentActionIndex < actionPattern.getActionEvents().size()) {
+            triggerAction(actionPattern.getActionEvents().get(currentActionIndex));
 
             // TODO: delay either timeToComplete seconds, or until we know the action has completed, before going on to the next action
             executeActionPattern(actionPattern, currentActionIndex + 1);
@@ -209,14 +207,14 @@ public class Planner {
         }
     }
 
-    public void triggerAction(Action action) {
-        Log.d(TAG, String.format("Triggering action: %s", action.name));
+    public void triggerAction(ActionEvent action) {
+        Log.d(TAG, String.format("Triggering action: %s", action));
 //        ABOD3_Bridge.GetInstance().AlertForElement(action.name, "A");
         behaviourLibrary.executeAction(action);
     }
 
     private int checkSense(int numTriggersTrue, Sense sense) {
-        switch (sense.comparator) {
+        switch (sense.getComparator()) {
             case "bool":
                 if (SenseIsBoolean(sense)) {
                     numTriggersTrue = numTriggersTrue + 1;
@@ -261,38 +259,36 @@ public class Planner {
     }
 
     private boolean SenseIsBoolean(Sense sense) {
-        if (sense.value == 1) {
+        if (sense.getBooleanValue()) {
             if (behaviourLibrary.getBooleanSense(sense)) {
                 return true;
             }
-        } else if (sense.value == 0) {
+        } else {
             if (!behaviourLibrary.getBooleanSense(sense)) {
                 return true;
             }
-        } else {
-            Log.d(TAG, "Sense: "+sense.toString()+" expected output should be boolean 0 or 1");
         }
 
         return false;
     }
 
     private boolean SenseIsEqual(Sense sense) {
-        return (behaviourLibrary.getDoubleSense(sense) == sense.value);
+        return (behaviourLibrary.getDoubleSense(sense) == sense.getDoubleValue());
     }
 
     private boolean SenseIsLessThan(Sense sense) {
-        return (behaviourLibrary.getDoubleSense(sense) < sense.value);
+        return (behaviourLibrary.getDoubleSense(sense) < sense.getDoubleValue());
     }
 
     private boolean SenseIsLessThanOrEqual(Sense sense) {
-        return (behaviourLibrary.getDoubleSense(sense) <= sense.value);
+        return (behaviourLibrary.getDoubleSense(sense) <= sense.getDoubleValue());
     }
 
     private boolean SenseIsGreaterThan(Sense sense) {
-        return (behaviourLibrary.getDoubleSense(sense) > sense.value);
+        return (behaviourLibrary.getDoubleSense(sense) > sense.getDoubleValue());
     }
     private boolean SenseIsGreaterThanOrEqual(Sense sense) {
-        return (behaviourLibrary.getDoubleSense(sense) >= sense.value);
+        return (behaviourLibrary.getDoubleSense(sense) >= sense.getDoubleValue());
     }
 
 }

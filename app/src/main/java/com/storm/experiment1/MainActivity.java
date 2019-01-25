@@ -1,34 +1,63 @@
 package com.storm.experiment1;
 
-import android.content.res.XmlResourceParser;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.aldebaran.qi.sdk.QiContext;
 import com.aldebaran.qi.sdk.QiSDK;
 import com.aldebaran.qi.sdk.RobotLifecycleCallbacks;
-import com.aldebaran.qi.sdk.builder.SayBuilder;
 import com.aldebaran.qi.sdk.design.activity.RobotActivity;
-import com.aldebaran.qi.sdk.object.conversation.Say;
-import com.storm.posh.planner.BehaviourLibrary;
-import com.storm.posh.planner.Planner;
+import com.storm.abode.UIPlanTree;
+import com.storm.posh.plan.reader.xposh.XPOSHPlanReader;
+import com.storm.posh.BehaviourLibrary;
+import com.storm.posh.Planner;
+import com.storm.posh.plan.planelements.drives.DriveCollection;
+import com.storm.posh.plan.Plan;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends RobotActivity implements RobotLifecycleCallbacks {
+
+    private int mode = 0;
+    private String planFile;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final SimpleDateFormat logTimeFormat = new SimpleDateFormat("HH:mm:ss.SSSS");
+    private ConstraintLayout overlayLayout = null;
     private Planner planner;
+    private UIPlanTree uiPlanTree = null;
+    private ExecutorService backgroundColorExecutor = null;
+    private ScheduledExecutorService backgroundPingerScheduler;
+    private ConstraintLayout rootLayout = null;
+    private Handler generalHandler = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        planFile = "plans/plan.xml";
+
+        rootLayout = findViewById(R.id.root_layout);
+        overlayLayout = findViewById(R.id.overlay_layout);
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
 
         // Register the RobotLifecycleCallbacks to this Activity.
         QiSDK.register(this, this);
@@ -55,9 +84,44 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         BehaviourLibrary behaviourLibrary = new BehaviourLibrary();
         planner.behaviourLibrary = behaviourLibrary;
 
-        XmlResourceParser xmlPlan = getResources().getXml(R.xml.plan);
+        Plan.getInstance().cleanAllLists();
+        XPOSHPlanReader planReader = new XPOSHPlanReader();
 
-        planner.start(xmlPlan);
+        planReader.readFile(planFile);
+
+        planner.start();
+
+        displayPlan();
+    }
+
+    private void displayPlan() {
+        if (uiPlanTree == null) {
+            List<DriveCollection> driveCollections = planner.driveCollections();
+
+            //createTree
+            uiPlanTree = new UIPlanTree(driveCollections, getApplicationContext(), overlayLayout);
+            //root = uiPlanTree.getRoot();
+            uiPlanTree.initState();
+
+            backgroundColorExecutor = Executors.newSingleThreadExecutor();
+            backgroundPingerScheduler = Executors.newSingleThreadScheduledExecutor();
+
+            backgroundColorExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    final Runnable backgroundPinger = new Runnable() {
+
+                        @Override
+                        public void run() {
+                            uiPlanTree.setDefaultBackgroundColorNodes();
+                        }
+                    };
+
+                    backgroundPingerScheduler.scheduleAtFixedRate(backgroundPinger, 30, 400, TimeUnit.MILLISECONDS);
+                }
+            });
+
+        }
     }
 
     public void runPlan(View view) {
@@ -98,6 +162,72 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         //runnable must be execute once
         addToLog(".... delaying 5000ms ....");
         handler.postDelayed(planRunner, 5000);
+    }
+
+//    private void createGeneralHandler() {
+//        generalHandler = new Handler(Looper.getMainLooper()){
+//            @Override
+//            public void handleMessage(Message msg){
+//
+//                switch (msg.what){
+//                    case SERVER_RESPONSE:
+//
+//                        if(serverTextView.getVisibility() == View.VISIBLE) {
+//                            serverTextView.append("\n" + msg.obj);
+//                        }
+//
+//                        updateARElementsVisuals(msg);
+//
+//                        break;
+//
+//                    default:
+//                        super.handleMessage(msg);
+//                }
+//            }
+//        };
+//    }
+
+    public void reset() {
+//        stopExecutorService(networkExecutor);
+        stopExecutorService(backgroundColorExecutor);
+//        stopExecutorService(serverPingerScheduler);
+        stopExecutorService(backgroundPingerScheduler);
+        generalHandler.removeCallbacksAndMessages(null);
+
+        if(uiPlanTree != null) {
+            uiPlanTree.removeNodesFromUI(rootLayout, uiPlanTree.getRoot());
+        }else{
+            uiPlanTree.removeNodesFromUI(rootLayout, uiPlanTree.getRoot());
+        }
+
+        //root = null;
+        uiPlanTree = null;
+        mode = 0;
+//        networkExecutor = null;
+    }
+
+    private boolean stopExecutorService(ExecutorService service) {
+
+        if(service == null){
+            return false;
+        }else {
+            service.shutdown();
+            try {
+                if (!service.awaitTermination(100, TimeUnit.MICROSECONDS)) {
+                    service.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                System.out.println("stopExecutorService() throwed " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        if(service.isTerminated() && service.isShutdown()){
+            Log.i("NETWORK_TASK", "SUCCESSFULL SHUTDOWN OF GENERIC ExecutorService");
+            return true;
+        }else{
+            return false;
+        }
     }
 
     @Override

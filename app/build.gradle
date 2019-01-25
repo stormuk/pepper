@@ -27,4 +27,8 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.aldebaran:qisdk:1.4.4'
     implementation 'com.aldebaran:qisdk-design:1.4.4'
+    ['boofcv-android', 'boofcv-core'].each {
+        String a ->
+            implementation group: 'org.boofcv', name: a, version: '0.30'
+    }
 }
