@@ -10,7 +10,7 @@ import com.storm.posh.plan.planelements.competence.Competence;
 import com.storm.posh.plan.planelements.competence.CompetenceElement;
 import com.storm.posh.plan.planelements.drives.DriveCollection;
 import com.storm.posh.plan.planelements.drives.DriveElement;
-import com.recklesscoding.abode.util.IWriter;
+import com.storm.posh.util.IWriter;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -258,7 +258,7 @@ public class XMLPOSHPlanWriter implements IWriter {
         senseElement.setAttributeNode(attrValue);
 
         Attr attrComperator = doc.createAttribute("comperator");
-        attrComperator.setValue(sense.getComperator());
+        attrComperator.setValue(sense.getComparator());
         senseElement.setAttributeNode(attrComperator);
         return senseElement;
     }

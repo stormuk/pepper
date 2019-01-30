@@ -8,7 +8,7 @@ import com.storm.posh.plan.planelements.competence.Competence;
 import com.storm.posh.plan.planelements.competence.CompetenceElement;
 import com.storm.posh.plan.planelements.drives.DriveCollection;
 import com.storm.posh.plan.planelements.drives.DriveElement;
-import com.recklesscoding.abode.util.IWriter;
+import com.storm.posh.util.IWriter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -189,7 +189,7 @@ public class LapPlanWriter implements IWriter {
 
     private String constructValuePredicate(Sense sense) {
         if (sense.getValue() != null && !sense.getValue().isEmpty() )
-            return sense.getValue() + EMPTY_SPACE + sense.getComperator();
+            return sense.getValue() + EMPTY_SPACE + sense.getComparator();
         else
             return "";
     }

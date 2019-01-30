@@ -1,7 +1,7 @@
 package com.storm.posh.plan.planelements;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+//import javafx.collections.FXCollections;
+//import javafx.collections.ObservableList;
 
 /**
  * <p>
@@ -32,10 +32,10 @@ public enum TimeUnits {
         return SECONDS;
     }
 
-    public static ObservableList<String> getAll() {
-        ObservableList<String> timeUnits = FXCollections.observableArrayList();
-        timeUnits.addAll(MILISECONDS.toString(), SECONDS.toString(), MINUTES.toString());
-
-        return timeUnits;
-    }
+//    public static ObservableList<String> getAll() {
+//        ObservableList<String> timeUnits = FXCollections.observableArrayList();
+//        timeUnits.addAll(MILISECONDS.toString(), SECONDS.toString(), MINUTES.toString());
+//
+//        return timeUnits;
+//    }
 }

@@ -1,6 +1,6 @@
 package com.storm.posh.plan.reader;
 
-import com.recklesscoding.abode.util.IReader;
+import com.storm.posh.util.IReader;
 
 /**
  * Author: @Andreas.
