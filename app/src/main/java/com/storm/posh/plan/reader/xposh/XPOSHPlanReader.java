@@ -1,5 +1,9 @@
 package com.storm.posh.plan.reader.xposh;
 
+import android.util.Log;
+
+import com.storm.experiment1.R;
+import com.storm.posh.Planner;
 import com.storm.posh.plan.Plan;
 import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.Sense;
@@ -18,6 +22,7 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,10 +31,33 @@ import java.util.List;
  * Date : @29/12/2015
  */
 public class XPOSHPlanReader extends PlanReader {
+    private static final String TAG = XPOSHPlanReader.class.getSimpleName();
 
     @Override
     public void readFile(String fileName) {
         readXPOSHFile(fileName);
+    }
+
+    public void readFile(InputStream file) {
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(file);
+            doc.getDocumentElement().normalize();
+
+            actionPatternsCreator(doc);
+            competenceElementsCreator(doc);
+            competencesCreator(doc);
+            driveElementCreator(doc);
+            drivesCreator(doc);
+
+            competenceElementsLinker(doc);
+            Log.d(TAG, "DONE READING?");
+        } catch (Exception e) {
+            Log.d(TAG, "FAILED TO READ");
+            e.printStackTrace();
+        }
+
     }
 
     private void readXPOSHFile(String fileName) {
@@ -75,15 +103,21 @@ public class XPOSHPlanReader extends PlanReader {
         }
     }
 
+    /**
+     * only create <CompetenceElement> if not a child of a <Competence> element
+     * ie. non-placeholders
+     * @param doc
+     */
     private void competenceElementsCreator(Document doc) {
         NodeList competenceElementNodes = doc.getElementsByTagName("CompetenceElement");
         for (int i = 0; i < competenceElementNodes.getLength(); i++) {
-            if (competenceElementNodes.item(i).getNodeType() == Node.ELEMENT_NODE &&
-                    competenceElementNodes.item(i).getParentNode().getParentNode().getNodeName() != "Competence") {
+            //
+            Log.d(TAG, String.format("competence element parent type is %s", competenceElementNodes.item(i).getParentNode().getParentNode().getNodeName()));
+            if (competenceElementNodes.item(i).getNodeType() == Node.ELEMENT_NODE && !competenceElementNodes.item(i).getParentNode().getParentNode().getNodeName().equals("Competence")) {
                 Element ceElement = (Element) competenceElementNodes.item(i);
                 List<Sense> senses = conditionsCreator(ceElement.getElementsByTagName("Senses"));
-                CompetenceElement competenceElement = new CompetenceElement(ceElement.getAttribute("name"),
-                        senses);
+                Log.d(TAG, String.format("Creating CE with %d senses", senses.size()));
+                CompetenceElement competenceElement = new CompetenceElement(ceElement.getAttribute("name"), senses);
                 Plan.getInstance().addCompetenceElement(competenceElement);
             }
         }
@@ -91,20 +125,29 @@ public class XPOSHPlanReader extends PlanReader {
 
 
     private void competenceElementsLinker(Document doc) {
+        Log.d(TAG, "linking...");
         NodeList competenceElementNodes = doc.getElementsByTagName("CompetenceElement");
         for (int i = 0; i < competenceElementNodes.getLength(); i++) {
-            if (competenceElementNodes.item(i).getNodeType() == Node.ELEMENT_NODE &&
-                    competenceElementNodes.item(i).getParentNode().getParentNode().getNodeName() != "Competence") {
+            Log.d(TAG, "checking...");
+            if (competenceElementNodes.item(i).getNodeType() == Node.ELEMENT_NODE && !competenceElementNodes.item(i).getParentNode().getParentNode().getNodeName().equals("Competence")) {
                 Element ceElement = (Element) competenceElementNodes.item(i);
+                Log.d(TAG, String.format("%s is not placeholder, triggers %s", ceElement.getAttribute("name"), ceElement.getAttribute("triggers")));
                 PlanElement triggered = Plan.getInstance().findActionPattern(ceElement.getAttribute("triggers"));
+
                 if (triggered == null) {
-                    triggered = Plan.getInstance().findCompetence
-                            (ceElement.getAttribute("triggers"));
+                    triggered = Plan.getInstance().findCompetence(ceElement.getAttribute("triggers"));
                 }
+
                 if (triggered == null) {
-                    triggered = Plan.getInstance().createAction
-                            (ceElement.getAttribute("triggers"));
+                    triggered = Plan.getInstance().createAction(ceElement.getAttribute("triggers"));
                 }
+
+                if (triggered == null) {
+                    Log.d(TAG, "no triggered element found");
+                } else {
+                    Log.d(TAG, String.format("found triggered element: %s", triggered.getNameOfElement()));
+                }
+
                 Plan.getInstance().findCompetenceElementXPOSH(ceElement.getAttribute("name")).setTriggeredElement(triggered);
             }
         }
@@ -184,7 +227,7 @@ public class XPOSHPlanReader extends PlanReader {
                     if (conditionNodes.item(j).getNodeType() == Node.ELEMENT_NODE) {
                         Element conditionElement = (Element) conditionNodes.item(j);
                         Sense sense = Plan.getInstance().createSense(conditionElement.getAttribute("name"),
-                                conditionElement.getAttribute("comperator"), conditionElement.getAttribute("value"));
+                                conditionElement.getAttribute("comparator"), conditionElement.getAttribute("value"));
                         senses.add(sense);
                     }
                 }

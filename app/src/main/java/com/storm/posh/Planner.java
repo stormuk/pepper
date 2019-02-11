@@ -104,13 +104,14 @@ public class Planner {
             if (time >= driveElement.getNextCheck()) {
                 driveElement.updateNextCheck(time);
 
-                int numTriggersNeeded = 0;
+                int numTriggersMet = 0;
+                int numTriggersNeeded = driveElement.getSenses().size();
 
                 for (Sense sense : driveElement.getSenses()) {
-                    numTriggersNeeded = checkSense(numTriggersNeeded, sense);
+                    numTriggersMet = checkSense(numTriggersMet, sense);
                 }
 
-                if (numTriggersNeeded == driveElement.getSenses().size()) {
+                if (numTriggersMet == numTriggersNeeded) {
 //                    ABOD3_Bridge.getInstance().alertForElement(driveElement.name, "DE");
                     PlanElement elementToBeTriggered = driveElement.getTriggeredElement();
                     if (elementToBeTriggered instanceof Competence) {
@@ -123,7 +124,7 @@ public class Planner {
                         triggerAction((ActionEvent) elementToBeTriggered);
                     }
                 } else {
-                    pepperLog.appendLog(TAG, String.format("Triggers mismatch: %d v %d", numTriggersNeeded, driveElement.getSenses().size()));
+                    pepperLog.appendLog(TAG, String.format("Triggers mismatch: %d v %d", numTriggersMet, numTriggersNeeded));
                 }
             } else {
                 pepperLog.appendLog(TAG, "Not due to run yet");
@@ -218,6 +219,7 @@ public class Planner {
     }
 
     private int checkSense(int numTriggersTrue, Sense sense) {
+        pepperLog.appendLog(TAG, String.format("Comparator: %s, Value: %s", sense.getComparator(), sense.getValue()));
         switch (sense.getComparator()) {
             case "bool":
                 if (SenseIsBoolean(sense)) {
@@ -263,15 +265,22 @@ public class Planner {
     }
 
     private boolean SenseIsBoolean(Sense sense) {
+        pepperLog.appendLog(TAG, String.format("bool wants %b", sense.getBooleanValue()));
         if (sense.getBooleanValue()) {
+            pepperLog.appendLog(TAG, "want true");
             if (behaviourLibrary.getBooleanSense(sense)) {
+                pepperLog.appendLog(TAG, "yay");
                 return true;
             }
         } else {
+            pepperLog.appendLog(TAG, "want false");
             if (!behaviourLibrary.getBooleanSense(sense)) {
+                pepperLog.appendLog(TAG, "yay");
                 return true;
             }
         }
+
+        pepperLog.appendLog(TAG, "nay");
 
         return false;
     }

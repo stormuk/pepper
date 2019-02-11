@@ -76,12 +76,12 @@ public class Plan {
         return sense;
     }
 
-    public Sense createSense(String name, String comperator, String value) {
+    public Sense createSense(String name, String comparator, String value) {
         Sense sense = findSense(name);
         if (sense != null) {
             return sense;
         }
-        sense = new Sense(name, comperator, value);
+        sense = new Sense(name, comparator, value);
         senses.add(sense);
 
         return sense;
@@ -136,11 +136,11 @@ public class Plan {
     }
 
     public Sense findSense(String name) {
-        for (Sense sense : senses) {
-            if (sense.getNameOfElement().equals(name)) {
-                return sense;
-            }
-        }
+//        for (Sense sense : senses) {
+//            if (sense.getNameOfElement().equals(name)) {
+//                return sense;
+//            }
+//        }
         return null;
     }
 

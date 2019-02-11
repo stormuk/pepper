@@ -1,5 +1,7 @@
 package com.storm.posh.plan.planelements;
 
+import android.util.Log;
+
 /**
  * Author: @Andreas.
  * Date : @13/01/2016
@@ -14,10 +16,10 @@ public class Sense extends PlanElement {
         super(nameOfElement);
     }
 
-    public Sense(String nameOfElement, String comperator, String value) {
+    public Sense(String nameOfElement, String comparator, String value) {
         super(nameOfElement);
         this.value = value;
-        this.comparator = comperator;
+        this.comparator = comparator;
     }
 
     public String getValue() {
@@ -25,12 +27,12 @@ public class Sense extends PlanElement {
     }
 
     public void setValue(String value) {
-        System.out.println(value);
         this.value = value;
     }
 
     public boolean getBooleanValue() {
-        return value == "1";
+        Log.d("D/Sense", String.format("Name: %s. Value: %s", getNameOfElement(), value));
+        return value.equals("1");
     }
 
     public Double getDoubleValue() {

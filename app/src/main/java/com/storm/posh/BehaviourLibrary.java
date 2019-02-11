@@ -2,14 +2,21 @@ package com.storm.posh;
 
 import android.util.Log;
 
+import com.storm.experiment1.PepperLog;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 import com.storm.posh.plan.planelements.Sense;
 
 public class BehaviourLibrary {
     private static final String TAG = BehaviourLibrary.class.getSimpleName();
 
+    private PepperLog pepperLog;
+
     private boolean haveWavedLeft = false;
     private boolean haveWavedRight = false;
+
+    public BehaviourLibrary(PepperLog pepperLog) {
+        this.pepperLog = pepperLog;
+    }
 
     public void reset() {
         haveWavedLeft = false;
@@ -17,23 +24,23 @@ public class BehaviourLibrary {
     }
 
     public boolean getBooleanSense(Sense sense) {
-        Log.d(TAG, String.format("Getting boolean sense: %s", sense));
+        pepperLog.appendLog(TAG, String.format("Getting boolean sense: %s", sense));
         switch(sense.getNameOfElement()) {
             case "HaveWavedLeft":
-                Log.d(TAG, String.format("Sense value is: %b", haveWavedLeft));
+                pepperLog.appendLog(TAG, String.format("Sense value is: %b", haveWavedLeft));
                 return haveWavedLeft;
             case "HaveWavedRight":
-                Log.d(TAG, String.format("Sense value is: %b", haveWavedRight));
+                pepperLog.appendLog(TAG, String.format("Sense value is: %b", haveWavedRight));
                 return haveWavedRight;
         }
         return false;
     }
     public double getDoubleSense(Sense sense) {
-        Log.d(TAG, "Getting double sense: "+sense);
+        pepperLog.appendLog(TAG, "Getting double sense: "+sense);
         return 3.6;
     }
     public void executeAction(ActionEvent action) {
-        Log.d(TAG, "Performing action: "+action);
+        pepperLog.appendLog(TAG, "Performing action: "+action);
         switch(action.getNameOfElement()) {
             case "WaveLeft":
                 waveLeft();
@@ -50,12 +57,12 @@ public class BehaviourLibrary {
     }
 
     private void waveLeft() {
-        Log.d(TAG, "WAVING LEFT");
+        pepperLog.appendLog(TAG, "WAVING LEFT");
         this.haveWavedLeft = true;
     }
 
     private void waveRight() {
-        Log.d(TAG, "WAVING RIGHT");
+        pepperLog.appendLog(TAG, "WAVING RIGHT");
         this.haveWavedRight = true;
     }
 }

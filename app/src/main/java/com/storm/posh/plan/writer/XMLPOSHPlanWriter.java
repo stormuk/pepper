@@ -257,9 +257,9 @@ public class XMLPOSHPlanWriter implements IWriter {
         attrValue.setValue(sense.getValue());
         senseElement.setAttributeNode(attrValue);
 
-        Attr attrComperator = doc.createAttribute("comperator");
-        attrComperator.setValue(sense.getComparator());
-        senseElement.setAttributeNode(attrComperator);
+        Attr attrComparator = doc.createAttribute("comparator");
+        attrComparator.setValue(sense.getComparator());
+        senseElement.setAttributeNode(attrComparator);
         return senseElement;
     }
 

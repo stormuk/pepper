@@ -18,6 +18,7 @@ import com.storm.posh.BehaviourLibrary;
 import com.storm.posh.Planner;
 import com.storm.posh.plan.Plan;
 
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -25,7 +26,6 @@ import java.util.Date;
 public class MainActivity extends RobotActivity implements RobotLifecycleCallbacks, PepperLog {
 
     private int mode = 0;
-    private String planFile;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final SimpleDateFormat logTimeFormat = new SimpleDateFormat("HH:mm:ss.SSSS");
     private ConstraintLayout overlayLayout = null;
@@ -35,14 +35,15 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
 //    private ScheduledExecutorService backgroundPingerScheduler;
     private ConstraintLayout rootLayout = null;
     private Handler generalHandler = null;
-    private TextView plannerLog = findViewById(R.id.textPlannerLog);
+    private TextView plannerLog;
+
+    private PepperServer pepperServer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        planFile = "plans/plan.xml";
+        plannerLog = findViewById(R.id.textPlannerLog);
 
         rootLayout = findViewById(R.id.root_layout);
         overlayLayout = findViewById(R.id.overlay_layout);
@@ -53,34 +54,41 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         View decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
 
+        // Pepper server
+        pepperServer = new PepperServer(this);
+
         // Register the RobotLifecycleCallbacks to this Activity.
         QiSDK.register(this, this);
+
+        readPlan();
     }
 
     @Override
-    public void appendLog(final String tag, final String message) {
+    public void appendLog(final String tag, final String message, boolean server) {
         Log.d(tag, message);
         final Date currentTime = Calendar.getInstance().getTime();
+        final String formattedMessage = String.format("%s [%s]: %s", logTimeFormat.format(currentTime), tag, message);
+
+        if (server) {
+            pepperServer.sendMessage(formattedMessage);
+        }
 
         runOnUiThread(new Runnable(){
             @Override
             public void run(){
-                plannerLog.append(String.format("\n %s [%s]: %s", logTimeFormat.format(currentTime), tag, message));
+                plannerLog.append("\n" + formattedMessage);
             }
         });
     }
 
     @Override
-    public void appendLog(final String message) {
-        Log.d(TAG, message);
-        final Date currentTime = Calendar.getInstance().getTime();
+    public void appendLog(String tag, String message) {
+        this.appendLog(tag, message, true);
+    }
 
-        runOnUiThread(new Runnable(){
-            @Override
-            public void run(){
-                plannerLog.append(String.format("\n %s [%s]: %s", logTimeFormat.format(currentTime), TAG, message));
-            }
-        });
+    @Override
+    public void appendLog(String message) {
+        this.appendLog(TAG, message, true);
     }
 
     @Override
@@ -94,15 +102,21 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
     }
 
     public void readPlan(View view) {
+        readPlan();
+    }
+
+    private void readPlan() {
         Log.d(TAG, "READING PLAN");
 
         planner = new Planner(this);
 
-        BehaviourLibrary behaviourLibrary = new BehaviourLibrary();
+        BehaviourLibrary behaviourLibrary = new BehaviourLibrary(this);
         planner.behaviourLibrary = behaviourLibrary;
 
         Plan.getInstance().cleanAllLists();
         XPOSHPlanReader planReader = new XPOSHPlanReader();
+
+        InputStream planFile = getResources().openRawResource(R.raw.plan);
 
         planReader.readFile(planFile);
 
@@ -170,20 +184,20 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
                 finally {
                     if (completed) {
                         appendLog("REACHED END OF PLAN");
-                    } else if (iteration > 50) {
+                    } else if (iteration > 10) {
                         appendLog("REACHED ITERATION LIMIT");
                     } else {
                         iteration += 1;
-                        appendLog(".... waiting 5000ms ....");
-                        handler.postDelayed(this, 5000);
+                        appendLog(".... waiting 1000ms ....");
+                        handler.postDelayed(this, 1000);
                     }
                 }
             }
         };
 
         //runnable must be execute once
-        appendLog(".... delaying 5000ms ....");
-        handler.postDelayed(planRunner, 5000);
+        appendLog(".... delaying 1000ms ....");
+        handler.postDelayed(planRunner, 1000);
     }
 
 //    private void createGeneralHandler() {
@@ -256,6 +270,7 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
     protected void onDestroy() {
         // Unregister the RobotLifecycleCallbacks for this Activity.
         QiSDK.unregister(this, this);
+        pepperServer.destroy();
         super.onDestroy();
     }
 

@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Plan>
     <ActionPatterns>
-        <ActionPattern name ="AP-WaveLeft">
-            <Action name ="WaveLeft"></Action>
+        <ActionPattern name="AP-WaveLeft">
+            <Action name="WaveLeft"></Action>
         </ActionPattern>
         <ActionPattern name="AP-WaveRight">
-            <Action name ="WaveRight"></Action>
+            <Action name="WaveRight"></Action>
         </ActionPattern>
     </ActionPatterns>
+
+
     <CompetenceElements>
         <CompetenceElement name="CE-WaveLeft" triggers="AP-WaveLeft">
             <Senses>
@@ -27,9 +29,9 @@
     </Competences>
     <DriveElements>
         <DriveElement name="DE-WaveLeft" triggers="C-WaveLeft" checkTime="0">
-            <Triggers>
+            <Senses>
                 <Sense name="HaveWavedLeft" value="0" comparator="bool"></Sense>
-            </Triggers>
+            </Senses>
         </DriveElement>
         <DriveElement name="DE-WaveRight" triggers="AP-WaveRight" checkTime="0">
             <Senses>
@@ -39,17 +41,17 @@
     </DriveElements>
     <Drives>
         <Drive name="D-WaveLeft">
-            <Goals>
+            <Senses>
                 <Sense name="HaveWavedLeft" value="1" comparator="bool"></Sense>
-            </Goals>
+            </Senses>
             <DriveElements>
                 <DriveElement name="DE-WaveLeft"></DriveElement>
             </DriveElements>
         </Drive>
         <Drive name="D-WaveRight">
-            <Goals>
+            <Senses>
                 <Sense name="HaveWavedRight" value="1" comparator="bool"></Sense>
-            </Goals>
+            </Senses>
             <DriveElements>
                 <DriveElement name="DE-WaveRight"></DriveElement>
             </DriveElements>
