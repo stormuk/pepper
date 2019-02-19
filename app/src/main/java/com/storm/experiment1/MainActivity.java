@@ -12,7 +12,11 @@ import android.widget.TextView;
 import com.aldebaran.qi.sdk.QiContext;
 import com.aldebaran.qi.sdk.QiSDK;
 import com.aldebaran.qi.sdk.RobotLifecycleCallbacks;
+import com.aldebaran.qi.sdk.builder.SayBuilder;
 import com.aldebaran.qi.sdk.design.activity.RobotActivity;
+import com.aldebaran.qi.sdk.object.conversation.Say;
+import com.storm.posh.plan.planelements.PlanElement;
+import com.storm.posh.plan.planelements.drives.DriveCollection;
 import com.storm.posh.plan.reader.xposh.XPOSHPlanReader;
 import com.storm.posh.BehaviourLibrary;
 import com.storm.posh.Planner;
@@ -23,30 +27,38 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MainActivity extends RobotActivity implements RobotLifecycleCallbacks, PepperLog {
+public class MainActivity extends RobotActivity implements PepperLog {
 
     private int mode = 0;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final SimpleDateFormat logTimeFormat = new SimpleDateFormat("HH:mm:ss.SSSS");
-    private ConstraintLayout overlayLayout = null;
     private Planner planner;
 //    private UIPlanTree uiPlanTree = null;
 //    private ExecutorService backgroundColorExecutor = null;
 //    private ScheduledExecutorService backgroundPingerScheduler;
-    private ConstraintLayout rootLayout = null;
-    private Handler generalHandler = null;
+//    private ConstraintLayout rootLayout = null;
+//    private Handler generalHandler = null;
     private TextView plannerLog;
+    private TextView currentDriveName;
+    private TextView currentElementName;
 
     private PepperServer pepperServer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         plannerLog = findViewById(R.id.textPlannerLog);
+        currentDriveName = findViewById(R.id.currentDrive);
+        currentElementName = findViewById(R.id.currentElement);
 
-        rootLayout = findViewById(R.id.root_layout);
-        overlayLayout = findViewById(R.id.overlay_layout);
+//        rootLayout = findViewById(R.id.root_layout);
+
+        planner = new Planner(this);
+
+        BehaviourLibrary behaviourLibrary = BehaviourLibrary.getInstance();
+        behaviourLibrary.setPepperLog(this);
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -58,7 +70,7 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         pepperServer = new PepperServer(this);
 
         // Register the RobotLifecycleCallbacks to this Activity.
-        QiSDK.register(this, this);
+        QiSDK.register(this, BehaviourLibrary.getInstance());
 
         readPlan();
     }
@@ -101,17 +113,39 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
         });
     }
 
+    @Override
+    public void setCurrentDrive(final DriveCollection drive) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                currentDriveName.setText(drive.getNameOfElement());
+            }
+        });
+    }
+
+    @Override
+    public void setCurrentElement(final PlanElement element) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                currentElementName.setText(element.getNameOfElement());
+            }
+        });
+    }
+
+    @Override
+    public void notifyABOD3(String name, String type) {
+        String message = String.format("ABOD3,%s,%s", name, type);
+        this.appendLog(TAG, message, false);
+        pepperServer.sendMessage(message);
+    }
+
     public void readPlan(View view) {
         readPlan();
     }
 
     private void readPlan() {
         Log.d(TAG, "READING PLAN");
-
-        planner = new Planner(this);
-
-        BehaviourLibrary behaviourLibrary = new BehaviourLibrary(this);
-        planner.behaviourLibrary = behaviourLibrary;
 
         Plan.getInstance().cleanAllLists();
         XPOSHPlanReader planReader = new XPOSHPlanReader();
@@ -184,20 +218,20 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
                 finally {
                     if (completed) {
                         appendLog("REACHED END OF PLAN");
-                    } else if (iteration > 10) {
+                    } else if (iteration > 50) {
                         appendLog("REACHED ITERATION LIMIT");
                     } else {
                         iteration += 1;
-                        appendLog(".... waiting 1000ms ....");
-                        handler.postDelayed(this, 1000);
+                        appendLog(".... waiting ....");
+                        handler.postDelayed(this, 500);
                     }
                 }
             }
         };
 
         //runnable must be execute once
-        appendLog(".... delaying 1000ms ....");
-        handler.postDelayed(planRunner, 1000);
+        appendLog(".... delaying ....");
+        handler.postDelayed(planRunner, 500);
     }
 
 //    private void createGeneralHandler() {
@@ -269,31 +303,9 @@ public class MainActivity extends RobotActivity implements RobotLifecycleCallbac
     @Override
     protected void onDestroy() {
         // Unregister the RobotLifecycleCallbacks for this Activity.
-        QiSDK.unregister(this, this);
+        QiSDK.unregister(this, BehaviourLibrary.getInstance());
         pepperServer.destroy();
         super.onDestroy();
     }
 
-    @Override
-    public void onRobotFocusGained(QiContext qiContext) {
-        // The robot focus is gained.
-//
-//        // Create a new say action.
-//        Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-//                .withText("Hello human!") // Set the text to say.
-//                .build(); // Build the say action.
-//
-//        // Execute the action.
-//        say.run();
-    }
-
-    @Override
-    public void onRobotFocusLost() {
-        // The robot focus is lost.
-    }
-
-    @Override
-    public void onRobotFocusRefused(String reason) {
-        // The robot focus is refused.
-    }
 }

@@ -1,6 +1,7 @@
 package com.storm.posh.plan.planelements.drives;
 
 import com.storm.posh.plan.planelements.ElementWithTrigger;
+import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.Sense;
 
 import java.util.LinkedList;
@@ -19,6 +20,8 @@ public class DriveCollection extends ElementWithTrigger {
     private volatile List<Sense> goals  = new LinkedList<>();
 
     private volatile List<DriveElement> driveElements = new LinkedList<>();
+
+    private volatile PlanElement currentElement;
 
     public DriveCollection(String nameOfElement) {
         super(nameOfElement);
@@ -109,5 +112,13 @@ public class DriveCollection extends ElementWithTrigger {
 
     public int getPriority() {
         return priority;
+    }
+
+    public PlanElement getCurrentElement() {
+        return currentElement;
+    }
+
+    public void setCurrentElement(PlanElement currentElement) {
+        this.currentElement = currentElement;
     }
 }

@@ -1,7 +1,5 @@
 package com.storm.experiment1;
 
-import android.os.Handler;
-
 import com.storm.posh.Planner;
 
 import java.io.BufferedReader;
@@ -26,16 +24,14 @@ public class PepperServer {
 
     public static final int SERVER_PORT = 3003;
 
-    private Handler handler;
-
     public PepperServer(PepperLog pepperLog) {
         this.pepperLog = pepperLog;
         this.serverThread = new Thread(new ServerThread());
         this.serverThread.start();
-        getIpAddress();
+        logIpAddress();
     }
 
-    public String getIpAddress() {
+    public void logIpAddress() {
         String ip = "";
         try {
             Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface
@@ -50,9 +46,7 @@ public class PepperServer {
                             .nextElement();
 
                     if (inetAddress.isSiteLocalAddress()) {
-                        ip += "Server running at : "
-                                + inetAddress.getHostAddress()
-                                + ":" + SERVER_PORT;
+                        ip = String.format("Server running at: %s:%d", inetAddress.getHostAddress(), SERVER_PORT);
                     }
                 }
             }
@@ -60,12 +54,10 @@ public class PepperServer {
         } catch (SocketException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            ip += "Something Wrong! " + e.toString() + "\n";
+            ip = "Something Wrong! " + e.toString();
         }
 
         pepperLog.appendLog(TAG, ip, false);
-
-        return ip;
     }
 
     public void sendMessage(final String message) {

@@ -1,9 +1,10 @@
 package com.storm.posh;
 
+import android.util.Log;
+
 import com.storm.experiment1.PepperLog;
 import com.storm.posh.plan.Plan;
 import com.storm.posh.plan.planelements.Sense;
-import com.storm.posh.plan.planelements.TimeUnits;
 import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 import com.storm.posh.plan.planelements.drives.DriveCollection;
@@ -29,6 +30,8 @@ public class Planner {
     public void start() {
         pepperLog.appendLog(TAG,"Starting Planner");
         plan = Plan.getInstance();
+        behaviourLibrary = BehaviourLibrary.getInstance();
+
         pepperLog.appendLog(TAG, "Got plan:");
         pepperLog.appendLog(TAG, plan.toString());
     }
@@ -39,6 +42,7 @@ public class Planner {
 
     public void reset() {
         behaviourLibrary.reset();
+        plan.reset();
     }
 
     public List<DriveCollection> driveCollections() {
@@ -51,16 +55,20 @@ public class Planner {
         pepperLog.appendLog(TAG, String.format("Starting drives: %d", validDrivesCount));
         int currentPriority = -1;
 
+        boolean runDrive = false;
+
         for (DriveCollection drive : plan.getDriveCollections()) {
             pepperLog.appendLog(TAG, String.format("Considering: %s", drive));
 
+            // TODO: Should this just be replaced by a forced break out of loop? Otherwise an arbitrary selection of drives may run
+
             // Avoid extra loops for lower priority items.
-            if (currentPriority != -1) {
-                if (currentPriority < drive.getPriority()) {
-                    pepperLog.appendLog(TAG, "Priority too low");
-                    continue;
-                }
-            }
+//            if (currentPriority != -1) {
+//                if (currentPriority < drive.getPriority()) {
+//                    pepperLog.appendLog(TAG, "Priority too low");
+//                    continue;
+//                }
+//            }
 
             if (currentPriority == -1 || currentPriority == drive.getPriority()) {
                 if (drive.getGoals().size() != 0) {
@@ -71,34 +79,42 @@ public class Planner {
                         numGoalsMet = checkSense(numGoalsMet, goal);
                     }
 
-                    if (numGoalsMet != drive.getGoals().size()) {
-                        pepperLog.appendLog(TAG, "Goals unmet, running drive elements");
-//                        ABOD3_Bridge.getInstance().alertForElement(drive.name, "D");
-                        driveElementsHandler(drive.getDriveElements());
-                        currentPriority = drive.getPriority();
-                    } else {
+                    if (numGoalsMet == drive.getGoals().size()) {
                         pepperLog.appendLog(TAG, String.format("All goals met, skipping."));
                         validDrivesCount -= 1;
+                    } else {
+                        pepperLog.appendLog(TAG, "Goals unmet, running drive elements");
+                        runDrive = true;
                     }
 
                 } else {
                     pepperLog.appendLog(TAG, "No goals to meet, running drive elements");
-//                        ABOD3_Bridge.getInstance().alertForElement(drive.name, "D");
-                    driveElementsHandler(drive.getDriveElements());
-                    currentPriority = drive.getPriority();
+                    runDrive = true;
+                }
+
+                if (runDrive) {
+                    if (driveHandler(drive)) {
+//                currentPriority = drive.getPriority();
+                        return true;
+                    }
                 }
             }
+
         }
 
-        pepperLog.appendLog(TAG, String.format("Valid drives: %d", validDrivesCount));
+//        pepperLog.appendLog(TAG, String.format("Valid drives: %d", validDrivesCount));
 
-        return validDrivesCount > 0;
+        return false;
     }
 
-    private void driveElementsHandler(List<DriveElement> driveElements) {
+    private boolean driveHandler(DriveCollection drive) {
+        pepperLog.notifyABOD3(drive.getNameOfElement(), "D");
         long time = Calendar.getInstance().getTimeInMillis();
+        plan.setCurrentDrive(drive);
+        pepperLog.setCurrentDrive(drive);
 
-        for (DriveElement driveElement : driveElements) {
+
+        for (DriveElement driveElement : drive.getDriveElements()) {
             pepperLog.appendLog(TAG, String.format("Running: %s", driveElement));
 
             if (time >= driveElement.getNextCheck()) {
@@ -112,8 +128,13 @@ public class Planner {
                 }
 
                 if (numTriggersMet == numTriggersNeeded) {
-//                    ABOD3_Bridge.getInstance().alertForElement(driveElement.name, "DE");
+                    pepperLog.notifyABOD3(driveElement.getNameOfElement(), "DE");
                     PlanElement elementToBeTriggered = driveElement.getTriggeredElement();
+
+                    if (elementToBeTriggered != null) {
+                        pepperLog.appendLog(TAG, String.format("Triggering %s...", elementToBeTriggered.getNameOfElement()));
+                    }
+
                     if (elementToBeTriggered instanceof Competence) {
                         competenceHandler((Competence) elementToBeTriggered);
 
@@ -122,7 +143,15 @@ public class Planner {
 
                     } else if (elementToBeTriggered instanceof ActionEvent) {
                         triggerAction((ActionEvent) elementToBeTriggered);
+
+                    } else if (elementToBeTriggered != null) {
+                        pepperLog.appendLog(TAG, String.format("Failed to trigger unknown type: %s", elementToBeTriggered.getClass().getSimpleName()));
                     }
+
+                    // only trigger one drive element per update
+                    // end handler
+                    return true;
+
                 } else {
                     pepperLog.appendLog(TAG, String.format("Triggers mismatch: %d v %d", numTriggersMet, numTriggersNeeded));
                 }
@@ -130,43 +159,59 @@ public class Planner {
                 pepperLog.appendLog(TAG, "Not due to run yet");
             }
         }
+
+
+        return false;
+    }
+
+    private void setCurrentElement(PlanElement element) {
+        plan.getCurrentDrive().setCurrentElement(element);
+        pepperLog.setCurrentElement(element);
     }
 
     private void competenceHandler(Competence competence) {
+        setCurrentElement(competence);
         pepperLog.appendLog(TAG, String.format("Running competence: %s", competence));
-        Sense goal = competence.getGoals().get(0); // TODO: Only check one goal?
 
-        if (checkSense(0, goal) == 0) {
-//            ABOD3_Bridge.GetInstance().AlertForElement(competence.name, "C");
+        int numGoalsMet = 0;
 
-            int numCEActivated = 0;
+        for (Sense goal : competence.getGoals()) {
+            numGoalsMet = checkSense(numGoalsMet, goal);
+        }
+
+        if (numGoalsMet < competence.getGoals().size()) {
+            pepperLog.notifyABOD3(competence.getNameOfElement(), "C");
 
             for (CompetenceElement competenceElement : competence.getCompetenceElements()) {
                 if (competenceElementHandler(competenceElement)) {
-                    numCEActivated += 1;
+                    pepperLog.appendLog(TAG, String.format("Successfully ran competenceElement %s for competence %s", competenceElement.getNameOfElement(), competence.getNameOfElement()));
+                    // only execute one competence element per update
+                    // end handler
+                    return;
                 }
             }
-
-            pepperLog.appendLog(TAG, String.format("Competence elements run: %d", numCEActivated));
         }
     }
 
     private boolean competenceElementHandler(CompetenceElement competenceElement) {
+        setCurrentElement(competenceElement);
         pepperLog.appendLog(TAG, String.format("Running competence element: %s", competenceElement));
-        int numSensesNeeded = 0;
+        int numSensesMatched = 0;
+        int numSensesNeeded = competenceElement.getSenses().size();
 
         pepperLog.appendLog(TAG, String.format("Checking %d senses", competenceElement.getSenses().size()));
 
         for (Sense sense : competenceElement.getSenses()) {
-            numSensesNeeded = checkSense(numSensesNeeded, sense);
+            numSensesMatched = checkSense(numSensesMatched, sense);
         }
 
-        if (numSensesNeeded == competenceElement.getSenses().size()) {
-//            ABOD3_Bridge.GetInstance().AlertForElement(competenceElement.name, "CE");
+        if (numSensesMatched == numSensesNeeded) {
+            pepperLog.notifyABOD3(competenceElement.getNameOfElement(), "CE");
             PlanElement elementToBeTriggered = competenceElement.getTriggeredElement();
 
-            pepperLog.appendLog(TAG, String.format("Triggerable name is %s", competenceElement.getTriggeredElement()));
-//            pepperLog.appendLog(TAG, String.format("Triggerable is %s", elementToBeTriggered.toString()));
+            if (elementToBeTriggered != null) {
+                pepperLog.appendLog(TAG, String.format("Triggering %s...", elementToBeTriggered.getNameOfElement()));
+            }
 
             if (elementToBeTriggered instanceof Competence) {
                 competenceHandler((Competence) elementToBeTriggered);
@@ -176,20 +221,27 @@ public class Planner {
 
             } else if (elementToBeTriggered instanceof ActionEvent) {
                 triggerAction((ActionEvent) elementToBeTriggered);
-            } else {
+
+            } else if (elementToBeTriggered != null) {
                 pepperLog.appendLog(TAG, String.format("Unknown type: %s", elementToBeTriggered.getClass().getSimpleName()));
+
+            } else {
+                pepperLog.appendLog(TAG, "Nothing to trigger!");
             }
 
             return true;
         } else {
+            // sense mismatch
+            pepperLog.appendLog(TAG, String.format("Only matched %d of %d senses", numSensesMatched, numSensesNeeded));
             return false;
         }
     }
 
 
     private void actionPatternHandler(ActionPattern actionPattern) {
+        setCurrentElement(actionPattern);
         pepperLog.appendLog(TAG, String.format("Running action pattern: %s", actionPattern));
-//        ABOD3_Bridge.GetInstance().AlertForElement(, actionPattern.name, "AP");
+        pepperLog.notifyABOD3(actionPattern.getNameOfElement(), "AP");
 
         // TODO: in Andreas' C# code this is started in a 'coroutine' - investigate this
         executeActionPattern(actionPattern, 0);
@@ -214,7 +266,8 @@ public class Planner {
 
     public void triggerAction(ActionEvent action) {
         pepperLog.appendLog(TAG, String.format("Triggering action: %s", action));
-//        ABOD3_Bridge.GetInstance().AlertForElement(action.name, "A");
+        pepperLog.notifyABOD3(action.getNameOfElement(), "A");
+        setCurrentElement(action);
         behaviourLibrary.executeAction(action);
     }
 
@@ -267,20 +320,20 @@ public class Planner {
     private boolean SenseIsBoolean(Sense sense) {
         pepperLog.appendLog(TAG, String.format("bool wants %b", sense.getBooleanValue()));
         if (sense.getBooleanValue()) {
-            pepperLog.appendLog(TAG, "want true");
+            pepperLog.appendLog(TAG, "comparator wants true");
             if (behaviourLibrary.getBooleanSense(sense)) {
-                pepperLog.appendLog(TAG, "yay");
+                pepperLog.appendLog(TAG, "comparator matches");
                 return true;
             }
         } else {
-            pepperLog.appendLog(TAG, "want false");
+            pepperLog.appendLog(TAG, "comparator wants false");
             if (!behaviourLibrary.getBooleanSense(sense)) {
-                pepperLog.appendLog(TAG, "yay");
+                pepperLog.appendLog(TAG, "comparator matches");
                 return true;
             }
         }
 
-        pepperLog.appendLog(TAG, "nay");
+        pepperLog.appendLog(TAG, "comparator does not match");
 
         return false;
     }

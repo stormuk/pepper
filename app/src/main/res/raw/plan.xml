@@ -17,6 +17,7 @@
             </Senses>
         </CompetenceElement>
     </CompetenceElements>
+
     <Competences>
         <Competence name="C-WaveLeft">
             <Senses>
@@ -27,6 +28,8 @@
             </CompetenceElements>
         </Competence>
     </Competences>
+
+
     <DriveElements>
         <DriveElement name="DE-WaveLeft" triggers="C-WaveLeft" checkTime="0">
             <Senses>
@@ -35,10 +38,13 @@
         </DriveElement>
         <DriveElement name="DE-WaveRight" triggers="AP-WaveRight" checkTime="0">
             <Senses>
+                <Sense name="HaveWavedLeft" value="1" comparator="bool"></Sense>
                 <Sense name="HaveWavedRight" value="0" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
     </DriveElements>
+
+
     <Drives>
         <Drive name="D-WaveLeft">
             <Senses>

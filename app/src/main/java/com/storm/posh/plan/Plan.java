@@ -35,6 +35,10 @@ public class Plan {
 
     private volatile List<DriveCollection> driveCollections = new LinkedList<>();
 
+    private volatile DriveCollection currentDrive;
+
+    private volatile PlanElement currentElement;
+
     private Plan() {
     }
 
@@ -43,6 +47,11 @@ public class Plan {
             instance = new Plan();
         }
         return instance;
+    }
+
+    public void reset() {
+        this.currentDrive = null;
+        this.currentElement = null;
     }
 
     public void cleanAllLists() {
@@ -228,5 +237,21 @@ public class Plan {
         }
 
         return actionPatterns;
+    }
+
+    public DriveCollection getCurrentDrive() {
+        return currentDrive;
+    }
+
+    public void setCurrentDrive(DriveCollection currentDrive) {
+        this.currentDrive = currentDrive;
+    }
+
+    public PlanElement getCurrentElement() {
+        return currentElement;
+    }
+
+    public void setCurrentElement(PlanElement currentElement) {
+        this.currentElement = currentElement;
     }
 }

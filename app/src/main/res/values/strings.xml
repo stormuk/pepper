@@ -3,4 +3,8 @@
     <string name="button_run_plan">Run Plan</string>
     <string name="button_read_plan">Read Plan</string>
     <string name="text_planner_log_waiting">Waiting for plan to run...</string>
+    <string name="label_current_drive">Current Drive:</string>
+    <string name="placeholder_current_drive">Waiting for plan to run...</string>
+    <string name="label_current_element">Current Element:</string>
+    <string name="placeholder_current_element">Waiting for plan to run...</string>
 </resources>
