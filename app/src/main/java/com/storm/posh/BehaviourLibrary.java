@@ -37,7 +37,6 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     private boolean haveWavedLeft = false;
     private boolean haveWavedRight = false;
 
-    private Animate animate = null;
 
     public BehaviourLibrary() { }
 
@@ -105,7 +104,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
         // Create an animation object.
         Future<Animation> myAnimationFuture = AnimationBuilder.with(qiContext)
-                .withResources(R.raw.raise_left_hand_b007)
+                .withResources(R.raw.left_hand_high_b001)
                 .buildAsync();
 
         myAnimationFuture.andThenConsume(myAnimation -> {
@@ -133,7 +132,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
         // Create an animation object.
         Future<Animation> myAnimationFuture = AnimationBuilder.with(qiContext)
-                .withResources(R.raw.raise_right_hand_b007)
+                .withResources(R.raw.right_hand_high_b001)
                 .buildAsync();
 
         myAnimationFuture.andThenConsume(myAnimation -> {
