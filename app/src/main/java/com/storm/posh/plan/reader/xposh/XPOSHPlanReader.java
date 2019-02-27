@@ -164,22 +164,19 @@ public class XPOSHPlanReader extends PlanReader {
                 DriveElement driveElement;
 
                 PlanElement triggered = Plan.getInstance().findActionPattern(deElement.getAttribute("triggers"));
+
                 if (triggered == null) {
-                    triggered = Plan.getInstance().findCompetence
-                            (deElement.getAttribute("triggers"));
+                    triggered = Plan.getInstance().findCompetence(deElement.getAttribute("triggers"));
                 }
                 if (triggered == null) {
-                    triggered = Plan.getInstance().createAction
-                            (deElement.getAttribute("triggers"));
+                    triggered = Plan.getInstance().createAction(deElement.getAttribute("triggers"));
                 }
 
                 if (!checkTime.isEmpty()) {
                     Double.parseDouble(deElement.getAttribute("checkTime"));
-                    driveElement = new DriveElement(deElement.getAttribute("name"), triggered,
-                            senses, Double.parseDouble(deElement.getAttribute("checkTime")));
+                    driveElement = new DriveElement(deElement.getAttribute("name"), triggered, senses, Double.parseDouble(deElement.getAttribute("checkTime")));
                 } else {
-                    driveElement = new DriveElement(deElement.getAttribute("name"), triggered,
-                            senses);
+                    driveElement = new DriveElement(deElement.getAttribute("name"), triggered, senses);
                 }
 
                 Plan.getInstance().addDriveElement(driveElement);
@@ -195,8 +192,7 @@ public class XPOSHPlanReader extends PlanReader {
                 Element competenceElement = (Element) competenceElementNodes.item(i);
                 List<Sense> goals = conditionsCreator(competenceElement.getElementsByTagName("Senses"));
                 List<CompetenceElement> competenceElements = ceCCreator(competenceElement.getElementsByTagName("CompetenceElements"));
-                Competence competence = new Competence(competenceElement.getAttribute("name"),
-                        goals, competenceElements);
+                Competence competence = new Competence(competenceElement.getAttribute("name"), goals, competenceElements);
                 Plan.getInstance().addCompetence(competence);
             }
         }
@@ -210,8 +206,7 @@ public class XPOSHPlanReader extends PlanReader {
                 Element driveElement = (Element) drivesNodes.item(i);
                 List<Sense> conditions = conditionsCreator(driveElement.getElementsByTagName("Senses"));
                 List<DriveElement> driveElements = deCCreator(driveElement.getElementsByTagName("DriveElements"));
-                DriveCollection driveCollection = new DriveCollection(driveElement.getAttribute("name"),
-                        conditions, driveElements);
+                DriveCollection driveCollection = new DriveCollection(driveElement.getAttribute("name"), conditions, driveElements);
                 Plan.getInstance().addDriveCollection(driveCollection);
             }
         }
@@ -226,8 +221,13 @@ public class XPOSHPlanReader extends PlanReader {
                 for (int j = 0; j < conditionNodes.getLength(); j++) {
                     if (conditionNodes.item(j).getNodeType() == Node.ELEMENT_NODE) {
                         Element conditionElement = (Element) conditionNodes.item(j);
-                        Sense sense = Plan.getInstance().createSense(conditionElement.getAttribute("name"),
-                                conditionElement.getAttribute("comparator"), conditionElement.getAttribute("value"));
+
+                        Sense sense = Plan.getInstance().createSense(
+                                conditionElement.getAttribute("name"),
+                                conditionElement.getAttribute("comparator"),
+                                conditionElement.getAttribute("value")
+                        );
+
                         senses.add(sense);
                     }
                 }
@@ -246,8 +246,7 @@ public class XPOSHPlanReader extends PlanReader {
                 for (int j = 0; j < ceNodes.getLength(); j++) {
                     if (ceNodes.item(j).getNodeType() == Node.ELEMENT_NODE) {
                         Element ceElement = (Element) ceNodes.item(j);
-                        CompetenceElement competenceElement = Plan.getInstance().
-                                findCompetenceElementXPOSH(ceElement.getAttribute("name"));
+                        CompetenceElement competenceElement = Plan.getInstance().findCompetenceElementXPOSH(ceElement.getAttribute("name"));
                         if (competenceElement != null) {
                             competenceElements.add(competenceElement);
                         }
@@ -268,8 +267,7 @@ public class XPOSHPlanReader extends PlanReader {
                 for (int j = 0; j < deNode.getLength(); j++) {
                     if (deNode.item(j).getNodeType() == Node.ELEMENT_NODE) {
                         Element deElement = (Element) deNode.item(j);
-                        DriveElement driveElement = Plan.getInstance().
-                                findDriveElementXPOSH(deElement.getAttribute("name"));
+                        DriveElement driveElement = Plan.getInstance().findDriveElementXPOSH(deElement.getAttribute("name"));
                         if (driveElement != null) {
                             driveElements.add(driveElement);
                         }

@@ -7,6 +7,7 @@ import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.aldebaran.qi.sdk.QiContext;
@@ -15,6 +16,7 @@ import com.aldebaran.qi.sdk.RobotLifecycleCallbacks;
 import com.aldebaran.qi.sdk.builder.SayBuilder;
 import com.aldebaran.qi.sdk.design.activity.RobotActivity;
 import com.aldebaran.qi.sdk.object.conversation.Say;
+import com.aldebaran.qi.sdk.util.FutureUtils;
 import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.drives.DriveCollection;
 import com.storm.posh.plan.reader.xposh.XPOSHPlanReader;
@@ -26,6 +28,7 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends RobotActivity implements PepperLog {
 
@@ -43,6 +46,10 @@ public class MainActivity extends RobotActivity implements PepperLog {
     private TextView currentElementName;
 
     private PepperServer pepperServer;
+    private BehaviourLibrary behaviourLibrary;
+
+    public Button startButton;
+    public Button stopButton;
 
 
     @Override
@@ -57,8 +64,9 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
         planner = new Planner(this);
 
-        BehaviourLibrary behaviourLibrary = BehaviourLibrary.getInstance();
+        behaviourLibrary = BehaviourLibrary.getInstance();
         behaviourLibrary.setPepperLog(this);
+        behaviourLibrary.setActivity(this);
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -71,6 +79,29 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
         // Register the RobotLifecycleCallbacks to this Activity.
         QiSDK.register(this, BehaviourLibrary.getInstance());
+
+
+        startButton = findViewById(R.id.start_button);
+        stopButton = findViewById(R.id.stop_button);
+
+
+        startButton.setOnClickListener(ignore -> {
+            if (behaviourLibrary.hasQiContext()) {
+                appendLog(TAG, "STARTING");
+
+                FutureUtils.wait(3, TimeUnit.SECONDS).andThenConsume(ignore_too -> behaviourLibrary.searchHumans());
+            } else {
+                appendLog(TAG, "CANNOT START YET");
+            }
+        });
+
+        stopButton.setOnClickListener(ignore -> {
+            appendLog(TAG, "STOPPING");
+
+            behaviourLibrary.stopMoving();
+        });
+
+
 
         readPlan();
     }
@@ -150,7 +181,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
         Plan.getInstance().cleanAllLists();
         XPOSHPlanReader planReader = new XPOSHPlanReader();
 
-        InputStream planFile = getResources().openRawResource(R.raw.plan);
+        InputStream planFile = getResources().openRawResource(R.raw.complex_plan);
 
         planReader.readFile(planFile);
 
@@ -195,11 +226,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
     public void runPlan(View view) {
         clearLog();
-        appendLog("RESETTING PLAN");
-        planner.reset();
-
-        appendLog("RUNNING PLAN");
-
 
         final Handler handler = new Handler();
         Runnable planRunner = new Runnable() {
@@ -208,8 +234,14 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
             @Override
             public void run() {
-                appendLog(String.format(".... starting update #%d....", iteration));
                 try {
+                    appendLog(" ");
+                    appendLog(" ");
+                    appendLog(" ");
+                    appendLog(" ");
+                    appendLog(" ");
+                    appendLog(" ");
+                    appendLog(String.format("\n\n.... starting update #%d....\n\n", iteration));
                     completed = !planner.update();
 
                 } catch (Exception e) {
@@ -218,20 +250,27 @@ public class MainActivity extends RobotActivity implements PepperLog {
                 finally {
                     if (completed) {
                         appendLog("REACHED END OF PLAN");
-                    } else if (iteration > 50) {
+                    } else if (iteration > 100) {
                         appendLog("REACHED ITERATION LIMIT");
                     } else {
                         iteration += 1;
-                        appendLog(".... waiting ....");
-                        handler.postDelayed(this, 500);
+
+                        handler.postDelayed(this, 1000);
                     }
                 }
             }
         };
 
-        //runnable must be execute once
-        appendLog(".... delaying ....");
-        handler.postDelayed(planRunner, 500);
+        // runnable must be execute once
+        FutureUtils
+                .wait(3, TimeUnit.SECONDS)
+                .andThenConsume(ignore -> {
+                    appendLog("RESETTING PLAN");
+                    planner.reset();
+
+                    appendLog("RUNNING PLAN");
+                    handler.postDelayed(planRunner, 1000);
+                });
     }
 
 //    private void createGeneralHandler() {

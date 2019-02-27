@@ -64,7 +64,7 @@ public class DriveElement extends ElementWithTrigger {
         if (driveElementSenses != null) {
             this.driveElementSenses = driveElementSenses;
         }
-        this.frequencyUnit = "sec";
+        this.frequencyUnit = "seconds";
         this.frequencyValue = frequencyValue;
     }
 
@@ -81,7 +81,7 @@ public class DriveElement extends ElementWithTrigger {
         if (driveElementSenses != null) {
             this.driveElementSenses = driveElementSenses;
         }
-        this.frequencyUnit = "sec";
+        this.frequencyUnit = "seconds";
         this.frequencyValue = frequencyValue;
     }
 

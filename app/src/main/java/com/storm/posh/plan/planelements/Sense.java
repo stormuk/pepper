@@ -19,7 +19,7 @@ public class Sense extends PlanElement {
     public Sense(String nameOfElement, String comparator, String value) {
         super(nameOfElement);
         this.value = value;
-        this.comparator = comparator;
+        this.comparator = normaliseComparator(comparator);
     }
 
     public String getValue() {
@@ -44,6 +44,23 @@ public class Sense extends PlanElement {
     }
 
     public void setComparator(String comparator) {
-        this.comparator = comparator;
+        this.comparator = normaliseComparator(comparator);
+    }
+
+    private String normaliseComparator(String rawComparator) {
+        switch(rawComparator) {
+            case "eq":
+                return "=";
+            case "lt":
+                return "<";
+            case "lte":
+                return "<=";
+            case "gt":
+                return ">";
+            case "gte":
+                return ">=";
+            default:
+                return rawComparator;
+        }
     }
 }

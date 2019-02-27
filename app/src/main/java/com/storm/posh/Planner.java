@@ -320,13 +320,13 @@ public class Planner {
     private boolean SenseIsBoolean(Sense sense) {
         pepperLog.appendLog(TAG, String.format("bool wants %b", sense.getBooleanValue()));
         if (sense.getBooleanValue()) {
-            pepperLog.appendLog(TAG, "comparator wants true");
+//            pepperLog.appendLog(TAG, "comparator wants true");
             if (behaviourLibrary.getBooleanSense(sense)) {
                 pepperLog.appendLog(TAG, "comparator matches");
                 return true;
             }
         } else {
-            pepperLog.appendLog(TAG, "comparator wants false");
+//            pepperLog.appendLog(TAG, "comparator wants false");
             if (!behaviourLibrary.getBooleanSense(sense)) {
                 pepperLog.appendLog(TAG, "comparator matches");
                 return true;

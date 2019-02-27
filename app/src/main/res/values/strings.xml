@@ -7,4 +7,6 @@
     <string name="placeholder_current_drive">Waiting for plan to run...</string>
     <string name="label_current_element">Current Element:</string>
     <string name="placeholder_current_element">Waiting for plan to run...</string>
+    <string name="button_start">Start</string>
+    <string name="button_stop">Stop</string>
 </resources>
