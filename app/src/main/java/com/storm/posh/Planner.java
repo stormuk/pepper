@@ -37,7 +37,10 @@ public class Planner {
     }
 
     public boolean update() {
-        return drivesHandler();
+        pepperLog.clearCheckedSenses();
+        pepperLog.setCurrentDrive(null);
+        drivesHandler();
+        return true;
     }
 
     public void reset() {
@@ -55,9 +58,9 @@ public class Planner {
         pepperLog.appendLog(TAG, String.format("Starting drives: %d", validDrivesCount));
         int currentPriority = -1;
 
-        boolean runDrive = false;
 
         for (DriveCollection drive : plan.getDriveCollections()) {
+            boolean runDrive = false;
             pepperLog.appendLog(TAG, String.format("Considering: %s", drive));
 
             // TODO: Should this just be replaced by a forced break out of loop? Otherwise an arbitrary selection of drives may run
@@ -102,7 +105,9 @@ public class Planner {
 
         }
 
-//        pepperLog.appendLog(TAG, String.format("Valid drives: %d", validDrivesCount));
+        pepperLog.appendLog(TAG, "No valid drive this time");
+
+        pepperLog.setCurrentDrive(null);
 
         return false;
     }
@@ -174,12 +179,13 @@ public class Planner {
         pepperLog.appendLog(TAG, String.format("Running competence: %s", competence));
 
         int numGoalsMet = 0;
+        int numGoals = competence.getGoals().size();
 
         for (Sense goal : competence.getGoals()) {
             numGoalsMet = checkSense(numGoalsMet, goal);
         }
 
-        if (numGoalsMet < competence.getGoals().size()) {
+        if (numGoals == 0 || numGoalsMet < numGoals) {
             pepperLog.notifyABOD3(competence.getNameOfElement(), "C");
 
             for (CompetenceElement competenceElement : competence.getCompetenceElements()) {
@@ -190,6 +196,9 @@ public class Planner {
                     return;
                 }
             }
+        } else {
+            pepperLog.appendLog(TAG, String.format("Not running CEs, all goals met(?): %d v %d", numGoalsMet, competence.getGoals().size()));
+
         }
     }
 
@@ -202,8 +211,11 @@ public class Planner {
         pepperLog.appendLog(TAG, String.format("Checking %d senses", competenceElement.getSenses().size()));
 
         for (Sense sense : competenceElement.getSenses()) {
+            pepperLog.appendLog(TAG, sense.getNameOfElement());
             numSensesMatched = checkSense(numSensesMatched, sense);
         }
+
+        pepperLog.appendLog(TAG, String.format("Checked senses: %d vs %d", numSensesMatched, numSensesNeeded));
 
         if (numSensesMatched == numSensesNeeded) {
             pepperLog.notifyABOD3(competenceElement.getNameOfElement(), "CE");
@@ -228,10 +240,11 @@ public class Planner {
             } else {
                 pepperLog.appendLog(TAG, "Nothing to trigger!");
             }
-
+            pepperLog.appendLog(TAG, "yay?");
             return true;
         } else {
             // sense mismatch
+            pepperLog.appendLog(TAG, "nay?");
             pepperLog.appendLog(TAG, String.format("Only matched %d of %d senses", numSensesMatched, numSensesNeeded));
             return false;
         }
@@ -248,19 +261,26 @@ public class Planner {
     }
 
     private void executeActionPattern(ActionPattern actionPattern, int currentActionIndex) {
+        pepperLog.appendLog(TAG, String.format("executing %s which has these actions:", actionPattern.toString()));
+
+        for (ActionEvent action : actionPattern.getActionEvents()) {
+            pepperLog.appendLog(TAG, String.format("Action: %s", action));
+        }
+
         if (actionPattern.getActionEvents().size() <= currentActionIndex) {
+            pepperLog.appendLog(TAG, String.format("Aborting execution: %d vs %d", currentActionIndex, actionPattern.getActionEvents().size()));
             return;
         }
 
         pepperLog.appendLog(TAG, String.format("Executing action %d of action pattern: %s", currentActionIndex, actionPattern));
         if (currentActionIndex < actionPattern.getActionEvents().size()) {
             triggerAction(actionPattern.getActionEvents().get(currentActionIndex));
-
+            pepperLog.appendLog(TAG, "next action...");
             // TODO: delay either timeToComplete seconds, or until we know the action has completed, before going on to the next action
             executeActionPattern(actionPattern, currentActionIndex + 1);
 
         } else {
-            // end the execution (was a coroutine `yield` in C#)
+            pepperLog.appendLog(TAG, "All done executing AP");
         }
     }
 
@@ -272,6 +292,8 @@ public class Planner {
     }
 
     private int checkSense(int numTriggersTrue, Sense sense) {
+        int origNumTriggersTrue = numTriggersTrue;
+
         pepperLog.appendLog(TAG, String.format("Comparator: %s, Value: %s", sense.getComparator(), sense.getValue()));
         switch (sense.getComparator()) {
             case "bool":
@@ -311,14 +333,21 @@ public class Planner {
                 break;
 
             default:
+                pepperLog.appendLog(TAG, String.format("Unknown comparator: %s", sense.getComparator()));
                 break;
+        }
+
+        if (numTriggersTrue != origNumTriggersTrue) {
+            pepperLog.appendLog(TAG, "Sense true");
+        } else {
+            pepperLog.appendLog(TAG, "Sense false");
         }
 
         return numTriggersTrue;
     }
 
     private boolean SenseIsBoolean(Sense sense) {
-        pepperLog.appendLog(TAG, String.format("bool wants %b", sense.getBooleanValue()));
+//        pepperLog.appendLog(TAG, String.format("bool wants %b", sense.getBooleanValue()));
         if (sense.getBooleanValue()) {
 //            pepperLog.appendLog(TAG, "comparator wants true");
             if (behaviourLibrary.getBooleanSense(sense)) {
@@ -343,6 +372,7 @@ public class Planner {
     }
 
     private boolean SenseIsLessThan(Sense sense) {
+        pepperLog.appendLog(TAG, String.format("values %d vs %d", behaviourLibrary.getDoubleSense(sense), sense.getDoubleValue()));
         return (behaviourLibrary.getDoubleSense(sense) < sense.getDoubleValue());
     }
 

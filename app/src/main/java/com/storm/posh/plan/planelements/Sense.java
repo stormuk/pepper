@@ -31,7 +31,6 @@ public class Sense extends PlanElement {
     }
 
     public boolean getBooleanValue() {
-        Log.d("D/Sense", String.format("Name: %s. Value: %s", getNameOfElement(), value));
         return value.equals("1");
     }
 

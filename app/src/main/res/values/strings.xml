@@ -9,4 +9,6 @@
     <string name="placeholder_current_element">Waiting for plan to run...</string>
     <string name="button_start">Start</string>
     <string name="button_stop">Stop</string>
+    <string name="label_checked_senses">Checked Senses:</string>
+    <string name="placeholder_checked_senses">Waiting for plan to run...</string>
 </resources>

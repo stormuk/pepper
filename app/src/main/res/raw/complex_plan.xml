@@ -6,6 +6,11 @@
                 <Action name="PromptForBatteryCharge"></Action>
             </Actions>
         </ActionPattern>
+        <ActionPattern name="AP-Explore">
+            <Actions>
+                <Action name="DoExplore"></Action>
+            </Actions>
+        </ActionPattern>
         <ActionPattern name="AP-Approach">
             <Actions>
                 <Action name="ApproachHuman"></Action>
@@ -13,7 +18,7 @@
         </ActionPattern>
         <ActionPattern name="AP-ListenForStop">
             <Actions>
-                <action name="ListenForStop"></action>
+                <Action name="ListenForStop"></Action>
             </Actions>
         </ActionPattern>
         <ActionPattern name="AP-DoNotAnnoy">
@@ -31,25 +36,30 @@
                 <Action name="WaveRight"></Action>
             </Actions>
         </ActionPattern>
+        <ActionPattern name="AP-ClearWaving">
+            <Actions>
+                <Action name="ClearWaving"></Action>
+            </Actions>
+        </ActionPattern>
         <ActionPattern name="AP-Mapping">
             <Actions>
                 <Action name="DoMapping"></Action>
             </Actions>
         </ActionPattern>
-        <ActionPattern name="AP-StartIdleTiming">
-            <Actions>
-                <Action name="StartIdleTiming"></Action>
-            </Actions>
-        </ActionPattern>
         <ActionPattern name="AP-Forget">
             <Actions>
-                <Action name="ForgetMap"></Action>
+                <!--Action name="ForgetMap"></Action-->
                 <Action name="ForgetAnnoy"></Action>
             </Actions>
         </ActionPattern>
         <ActionPattern name="AP-Hum">
             <Actions>
                 <Action name="Hum"></Action>
+            </Actions>
+        </ActionPattern>
+        <ActionPattern name="AP-DismissHumans">
+            <Actions>
+                <Action name="DismissHumans"></Action>
             </Actions>
         </ActionPattern>
     </ActionPatterns>
@@ -96,25 +106,38 @@
             </Senses>
         </CompetenceElement>
 
-        <CompetenceElement name="CE-StartTiming" triggers="AP-StartIdleTiming">
-            <Senses>
-                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
-                <Sense name="IdleTime" value="0" comparator="lt"></Sense>
-            </Senses>
-        </CompetenceElement>
         <CompetenceElement name="CE-Forget" triggers="AP-Forget">
             <Senses>
-                <Sense name="IdleTime" value="10" comparator="gt"></Sense>
+                <Sense name="DoNotAnnoy" value="1" comparator="bool"></Sense>
+                <Sense name="IdleTime" value="60" comparator="gt"></Sense>
             </Senses>
         </CompetenceElement>
         <CompetenceElement name="CE-Hum" triggers="AP-Hum">
             <Senses>
-                <Sense name="Talking" value="0" comparator="bool"></Sense>
+                <Sense name="IdleTime" value="10" comparator="gt"></Sense>
             </Senses>
         </CompetenceElement>
+
+        <CompetenceElement name="CE-DismissHumans" triggers="AP-DismissHumans">
+            <Senses>
+                <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+        <CompetenceElement name="CE-Mapping" triggers="AP-Mapping">
+            <Senses>
+                <Sense name="HumanPresent" value="0" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+
     </CompetenceElements>
 
     <Competences>
+        <Competence name="C-Mapping">
+            <CompetenceElements>
+                <CompetenceElement name="CE-DismissHumans"></CompetenceElement>
+                <CompetenceElement name="CE-Mapping"></CompetenceElement>
+            </CompetenceElements>
+        </Competence>
         <Competence name="C-BatteryPrompt">
             <CompetenceElements>
                 <CompetenceElement name="CE-BatteryPrompt"></CompetenceElement>
@@ -138,7 +161,6 @@
 
         <Competence name="C-SelfEntertain">
             <CompetenceElements>
-                <CompetenceElement name="CE-StartTiming"></CompetenceElement>
                 <CompetenceElement name="CE-Forget"></CompetenceElement>
                 <CompetenceElement name="CE-Hum"></CompetenceElement>
             </CompetenceElements>
@@ -146,44 +168,70 @@
     </Competences>
 
     <DriveElements>
-        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="60">
+        <DriveElement name="DE-Mapping" triggers="C-Mapping" checkTime="5">
+        </DriveElement>
+
+        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="20">
             <Senses>
-                <Sense name="BatteryPercent" value="25" comparator="lt"></Sense>
+                <Sense name="BatteryLow" value="1" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
 
 
-        <DriveElement name="DE-Approach" triggers="C-Approach" checkTime="0">
+        <DriveElement name="DE-Annoy" triggers="C-Annoy" checkTime="5">
             <Senses>
-                <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
-                <Sense name="FacingNearHuman" value="0" comparator="bool"></Sense>
-            </Senses>
-        </DriveElement>
-        <DriveElement name="DE-Annoy" triggers="C-Annoy" checkTime="0">
-            <Senses>
+                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
                 <Sense name="DoNotAnnoy" value="0" comparator="bool"></Sense>
                 <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+                <!--Sense name="HumanEngaged" value="0" comparator="bool"></Sense-->
+            </Senses>
+        </DriveElement>
+        <DriveElement name="DE-Approach" triggers="C-Approach" checkTime="3">
+            <Senses>
+                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
+                <Sense name="DoNotAnnoy" value="0" comparator="bool"></Sense>
+                <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+                <!--Sense name="HumanEngaged" value="0" comparator="bool"></Sense-->
             </Senses>
         </DriveElement>
 
-        <DriveElement name="DE-Mapping" triggers="AP-Mapping" checkTime="90">
+
+
+        <DriveElement name="DE-Explore" triggers="AP-Explore" checkTime="10">
             <Senses>
-                <Sense name="SafeToMap" value="1" comparator="bool"></Sense>
+                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
+                <Sense name="HumanPresent" value="0" comparator="bool"></Sense>
+                <Sense name="IdleTime" value="60" comparator="gt"></Sense>
             </Senses>
         </DriveElement>
 
         <DriveElement name="DE-EntertainSelf" triggers="C-SelfEntertain" checkTime="0">
+            <Senses>
+                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
+                <Sense name="HumanPresent" value="0" comparator="bool"></Sense>
+                <Sense name="IdleTime" value="15" comparator="gt"></Sense>
+            </Senses>
         </DriveElement>
     </DriveElements>
 
     <Drives>
-        <Drive name="D-Battery" priority="0">
+        <Drive name="D-Mapping" priority="0">
+            <Senses>
+                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
+            </Senses>
+            <DriveElements>
+                <DriveElement name="DE-Mapping"></DriveElement>
+            </DriveElements>
+        </Drive>
+
+
+        <Drive name="D-Battery" priority="1">
             <DriveElements>
                 <DriveElement name="DE-BatteryPrompt"></DriveElement>
             </DriveElements>
         </Drive>
 
-        <Drive name="D-Interact" priority="1">
+        <Drive name="D-Interact" priority="2">
             <Senses>
                 <Sense name="DoNotAnnoy" value="1" comparator="bool"></Sense>
             </Senses>
@@ -193,20 +241,18 @@
             </DriveElements>
         </Drive>
 
-        <Drive name="D-Mapping" priority="2">
-            <Senses>
-                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
-            </Senses>
+        <Drive name="D-Explore" priority="3">
             <DriveElements>
-                <DriveElement name="DE-Mapping"></DriveElement>
+                <DriveElement name="DE-Explore"></DriveElement>
             </DriveElements>
         </Drive>
 
-        <Drive name="D-EntertainSelf" priority="3">
+        <Drive name="D-EntertainSelf" priority="4">
             <DriveElements>
                 <DriveElement name="DE-EntertainSelf"></DriveElement>
             </DriveElements>
         </Drive>
+
     </Drives>
 </Plan>
 <!--

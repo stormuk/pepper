@@ -30,6 +30,7 @@ import com.aldebaran.qi.sdk.object.actuation.GoTo;
 import com.aldebaran.qi.sdk.object.actuation.LocalizationStatus;
 import com.aldebaran.qi.sdk.object.actuation.Localize;
 import com.aldebaran.qi.sdk.object.actuation.LocalizeAndMap;
+import com.aldebaran.qi.sdk.object.conversation.BodyLanguageOption;
 import com.aldebaran.qi.sdk.object.conversation.Listen;
 import com.aldebaran.qi.sdk.object.conversation.ListenResult;
 import com.aldebaran.qi.sdk.object.conversation.Phrase;
@@ -49,12 +50,15 @@ import com.storm.posh.plan.Plan;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 import com.storm.posh.plan.planelements.Sense;
 
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 public class BehaviourLibrary implements RobotLifecycleCallbacks {
@@ -67,11 +71,15 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     private QiContext qiContext;
     private MainActivity activity;
 
+    private boolean batteryLow = false;
+    private boolean batteryCharging = false;
+
     private boolean talking = false;
     private boolean listening = false;
     private boolean animating = false;
 
     private boolean humanPresent = false;
+    private boolean humanEngaged = false;
     private boolean facingNearHuman = false;
     private boolean doNotAnnoy = false;
 
@@ -81,7 +89,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     private boolean haveWavedRight = false;
 
     private boolean safeToMap = true;
-    private boolean mappingStarted = false;
+    private boolean mappingInProgress = false;
     private boolean mappingComplete = false;
 
     // Store the HumanAwareness service.
@@ -89,6 +97,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
     // Store the EngageHuman action.
     private EngageHuman engageHuman;
+
+    private Human recommendedHumanToEngage;
 
     // Store the LocalizeAndMap action.
     private LocalizeAndMap localizeAndMap;
@@ -100,9 +110,12 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     private Localize localize;
     private Future<Void> localization;
 
-    private Date idleTimerStart;
+    private Date lastActive;
+    private Date nextHumTime;
 
     private int batteryPercent = 75;
+
+    private String[] humPhrases = {"hmmm", "humm", "doo-be doo", "hum", "What was that?", "Who's there?", "Tee hee"};
 
 
     public BehaviourLibrary() { }
@@ -129,86 +142,125 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     }
 
     public void reset() {
-        removeListeners();
+        lastActive = new Date();
+
         haveWavedLeft = false;
         haveWavedRight = false;
+        batteryLow = false;
+        batteryCharging = false;
+        talking = false;
+        listening = false;
+        animating = false;
+        humanPresent = false;
+        humanEngaged = false;
+        facingNearHuman = false;
+        doNotAnnoy = false;
+        heardStop = false;
+        haveWavedLeft = false;
+        haveWavedRight = false;
+        safeToMap = true;
+        mappingInProgress = false;
+        mappingComplete = false;
     }
 
     public boolean getBooleanSense(Sense sense) {
 //        pepperLog.appendLog(TAG, String.format("Getting boolean sense: %s", sense));
+        boolean senseValue;
+
         switch(sense.getNameOfElement()) {
+            case "BatteryLow":
+                senseValue = isBatteryLow();
+                break;
             case "HaveWavedLeft":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", haveWavedLeft));
-                return haveWavedLeft;
+                senseValue = haveWavedLeft;
+                break;
             case "HaveWavedRight":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", haveWavedRight));
-                return haveWavedRight;
+                senseValue = haveWavedRight;
+                break;
             case "Talking":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", talking));
-                return talking;
+                senseValue = talking;
+                break;
             case "Listening":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", listening));
-                return listening;
+                senseValue = listening;
+                break;
             case "Animating":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", animating));
-                return animating;
+                senseValue = animating;
+                break;
             case "HumanPresent":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", humanPresent));
-                return humanPresent;
+                senseValue = humanPresent;
+                break;
+            case "HumanEngaged":
+                senseValue = humanEngaged;
+                break;
             case "FacingNearHuman":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", facingNearHuman));
-                return facingNearHuman;
+                senseValue = facingNearHuman;
+                break;
             case "HeardStop":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", heardStop));
-                return heardStop;
+                senseValue = heardStop;
+                break;
             case "MappingComplete":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", mappingComplete));
-                return mappingComplete;
+                senseValue = mappingComplete;
+                break;
             case "DoNotAnnoy":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", doNotAnnoy));
-                return doNotAnnoy;
+                senseValue = doNotAnnoy;
+                break;
             case "SafeToMap":
-                pepperLog.appendLog(TAG, String.format("Sense value is: %b", safeToMap));
-                return safeToMap;
+                senseValue = safeToMap;
+                break;
+
+            default:
+                senseValue = false;
+                break;
         }
-        return false;
+
+        pepperLog.checkedBooleanSense(TAG, sense, senseValue);
+
+        return senseValue;
     }
     public double getDoubleSense(Sense sense) {
-//        pepperLog.appendLog(TAG, String.format("Getting double sense: %s", sense));
+        double senseValue;
+
         switch(sense.getNameOfElement()) {
             case "IdleTime":
-                double idleTime = getIdleTime();
-                pepperLog.appendLog(TAG, String.format("Sense value is: %d", idleTime));
-                return idleTime;
+                senseValue = getIdleTime();
+                break;
             case "BatteryPercent":
-                double batteryPercent = getBatteryPercent();
-                pepperLog.appendLog(TAG, String.format("Sense value is: %d", batteryPercent));
-                return batteryPercent;
+                senseValue = getBatteryPercent();
+                break;
+
+            default:
+                senseValue = 0;
+                break;
         }
 
-        return 0;
+        pepperLog.checkedDoubleSense(TAG, sense, senseValue);
+
+        return senseValue;
     }
 
-    private double getIdleTime() {
-        if (idleTimerStart == null) {
-            return -1;
-        } else {
-            Date now = new Date();
-            return (now.getTime() - idleTimerStart.getTime()) / 1000;
+    private void setActive() {
+        this.lastActive = new Date();
+    }
+
+    public double getIdleTime() {
+        Date now = new Date();
+
+        if (lastActive == null) {
+            lastActive = now;
         }
+
+        int idleTime = (int)((now.getTime() - lastActive.getTime()) / 1000);
+
+        return Double.valueOf(idleTime);
     }
 
     private double getBatteryPercent() {
         return Double.valueOf(this.batteryPercent);
     }
 
-    private boolean getHumansPresent() {
-        return false;
-//        return (Math.random() < 0.4);
-    }
-
     public void executeAction(ActionEvent action) {
         pepperLog.appendLog(TAG, "Performing action: "+action);
+
         switch(action.getNameOfElement()) {
             case "WaveLeft":
                 waveLeft();
@@ -218,8 +270,20 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
                 waveRight();
                 break;
 
+            case "DoExplore":
+                doExplore();
+                break;
+
+            case "ClearWaving":
+                clearWaving();
+                break;
+
             case "PromptForBatteryCharge":
                 promptForBatteryCharge();
+                break;
+
+            case "DismissHumans":
+                dismissHumans();
                 break;
 
             case "ApproachHuman":
@@ -228,6 +292,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
             case "ListenForStop":
                 listenForStop();
+                break;
 
             case "DoNotAnnoy":
                 this.doNotAnnoy = true;
@@ -235,10 +300,6 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
             case "DoMapping":
                 doMapping();
-                break;
-
-            case "StartIdleTiming":
-                this.idleTimerStart = new Date();
                 break;
 
             case "ForgetMap":
@@ -263,25 +324,45 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         if (talking) {
             pepperLog.appendLog(TAG, "Cannot prompt, already talking");
             return;
+        } else {
+            setActive();
         }
 
-        Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-                .withText("My battery is low, please plug me in") // Set the text to say.
-                .build(); // Build the say action.
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
+            Say say = SayBuilder.with(qiContext) // Create the builder with the context.
+                    .withText("My battery is low, please plug me in") // Set the text to say.
+                    .build(); // Build the say action.
 
-        say.addOnStartedListener(() -> {
             this.talking = true;
-            pepperLog.appendLog(TAG, "Starting prompting");
+
+            // Execute the action.
+            say.run();
+
+            this.talking = false;
         });
+    }
 
-        // Execute the action.
-        Future<Void> sayFuture = say.async().run();
 
-        sayFuture.thenConsume(future -> {
-           this.talking = false;
-           handleFuture(future, "battery_prompt");
+    public void dismissHumans() {
+        if (talking) {
+            pepperLog.appendLog(TAG, "Cannot dismiss humans, already talking");
+            return;
+        } else {
+            setActive();
+        }
+
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
+            Say say = SayBuilder.with(qiContext) // Create the builder with the context.
+                    .withText("I need the room to myself for a few minutes, please leave") // Set the text to say.
+                    .build(); // Build the say action.
+
+            this.talking = true;
+
+            // Execute the action.
+            say.run();
+
+            this.talking = false;
         });
-
     }
 
     public void listenForStop() {
@@ -289,48 +370,62 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         if (listening) {
             pepperLog.appendLog(TAG, "Already listening");
             return;
+        } else if (heardStop) {
+            pepperLog.appendLog(TAG, "Already heard stop");
+            return;
+        } else {
+            setActive();
         }
 
-        this.heardStop = false;
+        pepperLog.appendLog(TAG, "1");
 
-        PhraseSet phraseSet = PhraseSetBuilder.with(qiContext).withTexts("Stop", "Go Away", "No").build();
-        Listen listen = ListenBuilder.with(qiContext).withPhraseSet(phraseSet).build();
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
+            // TODO: Only init this once
+            pepperLog.appendLog(TAG, "2");
+            PhraseSet phraseSet = PhraseSetBuilder.with(qiContext).withTexts("Stop", "Go Away", "No").build();
+            pepperLog.appendLog(TAG, "3");
+            Listen listen = ListenBuilder.with(qiContext).withPhraseSet(phraseSet).build();
 
-        listen.addOnStartedListener(() -> {
-            pepperLog.appendLog("Started listening...");
-        });
+            listen.addOnStartedListener(() -> {
+                this.listening = true;
+                pepperLog.appendLog("Started listening...");
+                pepperLog.appendLog(TAG, "4");
+            });
 
-        Future<ListenResult> listenFuture = listen.async().run();
+            Future<ListenResult> listenFuture = listen.async().run();
 
-        listenFuture.thenConsume(future -> {
-            this.listening = false;
-            handleFuture(future, "listen_for_stop");
+            listenFuture.thenConsume(future -> {
+                this.listening = false;
+                pepperLog.appendLog(TAG, "5");
+                handleFuture(future, "listen_for_stop");
 
-            try {
-                ListenResult result = future.get();
+                try {
+                    ListenResult result = future.get();
 
-                PhraseSet heardPhraseSet = result.getMatchedPhraseSet();
-                Phrase heardPhrase = result.getHeardPhrase();
+                    PhraseSet heardPhraseSet = result.getMatchedPhraseSet();
+                    Phrase heardPhrase = result.getHeardPhrase();
 
-                pepperLog.appendLog(TAG, String.format("Phrase was: %s", heardPhrase));
+                    pepperLog.appendLog(TAG, String.format("Phrase was: %s", heardPhrase));
 
-                if (heardPhrase.getText() == "Stop") {
-                    heardStop = true;
+                    if (heardPhrase.getText().equals("Stop")) {
+                        this.heardStop = true;
+                    }
+
+                    if (result.equals("Stop")) {
+                        pepperLog.appendLog(TAG, "Heard equals Stop");
+                    }
+
+                } catch (ExecutionException e) {
+                    pepperLog.appendLog(TAG, "Error occurred when listening for stop");
+                } catch (CancellationException e) {
+                    pepperLog.appendLog(TAG, "Listening for stop was cancelled");
                 }
-
-                if (result.equals("Stop")) {
-                    pepperLog.appendLog(TAG, "Heard equals Stop");
-                }
-
-            } catch (ExecutionException e) {
-                pepperLog.appendLog(TAG, "Error occurred when listening for stop");
-            } catch (CancellationException e) {
-                pepperLog.appendLog(TAG, "Listening for stop was cancelled");
-            }
+            });
         });
     }
 
     private void handleFuture(Future future, String label) {
+        pepperLog.appendLog(TAG, "Handling future");
         if (future.isSuccess()) {
             pepperLog.appendLog(TAG,String.format("Future %s done", label));
         } else if (future.hasError()) {
@@ -348,18 +443,34 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         } else if (animating){
             pepperLog.appendLog(TAG, "Cannot approach, already animating");
             return;
+        } else {
+            setActive();
         }
 
-        humanAwareness = qiContext.getHumanAwareness();
-        Human recommendedHuman = humanAwareness.getRecommendedHumanToEngage();
+//        humanAwareness = qiContext.getHumanAwareness();
+//        Human recommendedHuman = humanAwareness.getRecommendedHumanToEngage();
 
-        if (recommendedHuman != null) {
-            pepperLog.appendLog(TAG, String.format("Recommended human: %s", recommendedHuman));
+        if (recommendedHumanToEngage != null) {
+            pepperLog.appendLog(TAG, "Approaching human...");
+            pepperLog.appendLog(TAG, String.format("Recommended human: %s", recommendedHumanToEngage));
 
-            followHuman(recommendedHuman);
+            followHuman(recommendedHumanToEngage);
 
         } else {
             pepperLog.appendLog(TAG, "No recommended human");
+        }
+    }
+
+    public void doExplore() {
+        if (animating) {
+            pepperLog.appendLog(TAG, "Already animating, cannot explore");
+        } else {
+            pepperLog.appendLog(TAG, "Exploring");
+
+            FutureUtils.wait(5, TimeUnit.SECONDS).andThenConsume(ignore -> {
+                pepperLog.appendLog(TAG, "Done exploring");
+               this.animating = false;
+            });
         }
     }
 
@@ -368,8 +479,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         this.humanPresent = false;
         humanAwareness = qiContext.getHumanAwareness();
 
-        humanAwareness.removeAllOnHumansAroundChangedListeners();
         humanAwareness.addOnHumansAroundChangedListener(this::updateHumansAround);
+        humanAwareness.addOnRecommendedHumanToEngageChangedListener(this::updateHumanToEngage);
     }
 
     private void updateHumansAround(List<Human> humansAround) {
@@ -388,66 +499,78 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         }
     }
 
+    private void updateHumanToEngage(Human human) {
+        recommendedHumanToEngage = human;
+        if (human != null) {
+//            pepperLog.appendLog(TAG, "Updating humanToEngage - none!");
+            this.humanEngaged = false;
+        } else {
+//            pepperLog.appendLog(TAG, "Updating humanToEngage - found!");
+            this.humanEngaged = true;
+        }
+    }
+
     public void doMapping() {
-        pepperLog.appendLog(TAG, "Do mapping?");
-        if (mappingStarted) {
+        if (mappingComplete) {
+            pepperLog.appendLog(TAG, "Mapping already complete");
+            return;
+        } else if (mappingInProgress) {
             pepperLog.appendLog(TAG, "Mapping in progress");
+            setActive();
             return;
         } else if (animating) {
             pepperLog.appendLog(TAG, "Cannot map, already animating");
+        } else {
+            setActive();
         }
 
-        setAnimating(true);
-
-
         // Create a LocalizeAndMap action.
-        pepperLog.appendLog(TAG, qiContext.toString());
-        localizeAndMap = LocalizeAndMapBuilder.with(qiContext).build();
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
+            localizeAndMap = LocalizeAndMapBuilder.with(qiContext).build();
 
-        // Add an on status changed listener on the LocalizeAndMap action for the robot to say when he is localized.
-        localizeAndMap.addOnStatusChangedListener(status -> {
-            switch (status) {
-                case LOCALIZED:
-                    // Dump the ExplorationMap.
-                    explorationMap = localizeAndMap.dumpMap();
+            // Add an on status changed listener on the LocalizeAndMap action for the robot to say when he is localized.
+            localizeAndMap.addOnStatusChangedListener(status -> {
+                switch (status) {
+                    case LOCALIZED:
+                        // Dump the ExplorationMap.
+                        explorationMap = localizeAndMap.dumpMap();
 
-                    String message = "Robot has mapped his environment.";
-                    pepperLog.appendLog(TAG, message);
+                        pepperLog.appendLog(TAG, "I now have a map of my environment. I will use this map to localize myself.");
 
-                    pepperLog.appendLog(TAG, "I now have a map of my environment. I will use this map to localize myself.");
+                        int mapElementCount = explorationMap.serialize().split(" ").length;
+                        pepperLog.appendLog(TAG, String.format("Map has %d elements", mapElementCount));
 
-                    int mapElementCount = explorationMap.serialize().split(" ").length;
-                    pepperLog.appendLog(TAG, String.format("Map has %d elements", mapElementCount));
+                        // Cancel the LocalizeAndMap action.
+                        localizationAndMapping.requestCancellation();
+                        break;
+                    default:
+                        pepperLog.appendLog(TAG, String.format("Mapping status: %s", status));
+                }
+            });
+            this.mappingInProgress = true;
 
-                    // Cancel the LocalizeAndMap action.
-                    localizationAndMapping.requestCancellation();
-                    break;
-                default:
-                    pepperLog.appendLog(TAG, String.format("Mapping status: %s", status));
-            }
+            setAnimating(true);
+
+            pepperLog.appendLog(TAG, "Mapping started");
+
+            // Execute the LocalizeAndMap action asynchronously.
+            localizationAndMapping = localizeAndMap.async().run();
+
+            // Add a lambda to the action execution.
+            localizationAndMapping.thenConsume(future -> {
+                if (future.hasError()) {
+                    String errorMessage = "LocalizeAndMap action finished with error.";
+                    pepperLog.appendLog(TAG, String.format("%s: %s", errorMessage, future.getError()));
+                    this.mappingInProgress = false;
+                } else if (future.isCancelled()) {
+                    // cancelled means we're done mapping the environment and can use it
+                    startLocalizing(qiContext);
+                }
+
+                setAnimating(false);
+            });
         });
 
-        String message = "Mapping...";
-        this.mappingStarted = true;
-        pepperLog.appendLog(TAG, message);
-
-        // Execute the LocalizeAndMap action asynchronously.
-        localizationAndMapping = localizeAndMap.async().run();
-
-        // Add a lambda to the action execution.
-        localizationAndMapping.thenConsume(future -> {
-            if (future.hasError()) {
-                String errorMessage = "LocalizeAndMap action finished with error.";
-                pepperLog.appendLog(TAG, String.format("%s: %s", errorMessage, future.getError()));
-                this.mappingStarted = false;
-            } else if (future.isCancelled()) {
-                // cancelled means we're done mapping the environment and can use it
-                this.mappingComplete = true;
-                startLocalizing(qiContext);
-            }
-
-            setAnimating(false);
-        });
     }
 
     private void startLocalizing(QiContext qiContext) {
@@ -461,6 +584,20 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
             switch (status) {
                 case LOCALIZED:
                     pepperLog.appendLog(TAG, "Localization successful!");
+                    this.mappingInProgress = false;
+                    this.mappingComplete = true;
+
+                    Say say = SayBuilder.with(qiContext) // Create the builder with the context.
+                            .withText("I've finished mapping, you can come back in now!") // Set the text to say.
+                            .build(); // Build the say action.
+
+                    this.talking = true;
+
+                    // Execute the action.
+                    say.run();
+
+                    this.talking = false;
+
                     break;
             }
         });
@@ -479,6 +616,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
             } else if (future.isCancelled()) {
                 pepperLog.appendLog(TAG, "Localization is now cancelled");
             }
+
+            this.mappingInProgress = false;
         });
     }
 
@@ -490,32 +629,71 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         }
         this.explorationMap = null;
         this.mappingComplete = false;
+        this.mappingInProgress = false;
     }
 
     public void hum() {
+        Date now = new Date();
         if (talking) {
+            pepperLog.appendLog(TAG, "Already talking, can't hum now");
             return;
+        } else if (nextHumTime != null && now.before(nextHumTime)) {
+            pepperLog.appendLog(TAG, "Don't want to hum yet");
+            return;
+        } else {
+            pepperLog.appendLog(TAG, "Bored, gonna hum!");
         }
 
-        Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-                .withText("Do bee doo") // Set the text to say.
-                .build(); // Build the say action.
+        // set next time to hum
+        int humDelay = ThreadLocalRandom.current().nextInt(8,15);
+        pepperLog.appendLog(TAG, String.format("Next hum in %d seconds", humDelay));
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.add(Calendar.SECOND, humDelay);
+        nextHumTime = calendar.getTime();
 
-        say.addOnStartedListener(() -> {
+        // choose a phrase to hum
+        int index = ThreadLocalRandom.current().nextInt(humPhrases.length);
+        System.out.println("\nIndex :" + index );
+        String humPhrase = humPhrases[index];
+
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
             this.talking = true;
-            pepperLog.appendLog(TAG, "Starting humming");
-        });
+            Say say = SayBuilder.with(qiContext) // Create the builder with the context.
+                    .withText(humPhrase) // Set the text to say.
+                    .withBodyLanguageOption(BodyLanguageOption.DISABLED)
+                    .build(); // Build the say action.
 
-        // Execute the action.
-        Future<Void> sayFuture = say.async().run();
+            say.run();
 
-        sayFuture.thenConsume(future -> {
             this.talking = false;
-            handleFuture(future, "hum");
         });
+
+
+
+//        say.async().addOnStartedListener(() -> {
+//           this.talking = true;
+//           pepperLog.appendLog(TAG, "Starting 1111 humming?");
+//        });
+//
+//        say.addOnStartedListener(() -> {
+//            this.talking = true;
+//            pepperLog.appendLog(TAG, "Starting 2222 humming");
+//        });
+//
+//        // Execute the action.
+//        Future<Void> sayFuture = say.async().run();
+//
+//        sayFuture.andThenConsume(future -> {
+//            this.talking = false;
+//            pepperLog.appendLog(TAG, "Done?");
+////            handleFuture(future, "hum");
+//        });
     }
 
     public void waveLeft() {
+        setActive();
+
         if (animating) {
             pepperLog.appendLog(TAG, "WAVING IN PROGRESS");
             return;
@@ -544,6 +722,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     }
 
     private void waveRight() {
+        setActive();
+
         if (animating) {
             pepperLog.appendLog(TAG, "WAVING IN PROGRESS");
             return;
@@ -571,6 +751,12 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         });
     }
 
+    public void clearWaving() {
+        setHaveWavedLeft(false);
+        setHaveWavedRight(false);
+        pepperLog.appendLog(TAG, "WAVING CLEARED");
+    }
+
     // tidy up listeners
     public void removeListeners() {
         // Remove on started listeners from the GoTo action.
@@ -589,6 +775,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
         if (humanAwareness != null) {
             humanAwareness.removeAllOnHumansAroundChangedListeners();
+            humanAwareness.removeAllOnEngagedHumanChangedListeners();
         }
     }
 
@@ -598,9 +785,9 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         setQiContext(qiContext);
 
         FutureUtils
-                .wait(3, TimeUnit.SECONDS)
-                .andThenConsume(ignore -> doMapping())
+                .wait(0, TimeUnit.SECONDS)
                 .andThenConsume(ignore -> doHumans());
+//                .andThenConsume(ignore -> doMapping())
 
         // The robot focus is gained.
 //
@@ -675,31 +862,44 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         // Create the target frame from the human.
         Frame targetFrame = createTargetFrame(human);
 
-        // Create a GoTo action.
-        goTo = GoToBuilder.with(qiContext)
-                .withFrame(targetFrame)
-                .build();
+        pepperLog.appendLog(TAG, "Follow human");
 
-        goTo.addOnStartedListener(() -> {
-            setAnimating(true);
-            pepperLog.appendLog(TAG, "Follow started");
-        });
+        FutureUtils
+            .wait(0, TimeUnit.SECONDS)
+            .andThenConsume(ignore -> {
+                pepperLog.appendLog(TAG, "Follow start?");
+                // Create a GoTo action.
+                goTo = GoToBuilder.with(qiContext)
+                        .withFrame(targetFrame)
+                        .build();
 
-        // Execute the GoTo action asynchronously.
-        goToFuture = goTo.async().run();
+                setAnimating(true);
+                pepperLog.appendLog(TAG, "Follow started");
 
-        goToFuture.thenConsume(future -> {
-           if (future.isSuccess()) {
-               pepperLog.appendLog(TAG,"Follow done");
-               this.facingNearHuman = true;
-           } else if (future.hasError()) {
-               pepperLog.appendLog(TAG, String.format("Follow error: %s", future.getErrorMessage()));
-           } else if (future.isCancelled()) {
-               pepperLog.appendLog(TAG, "Follow cancelled");
-           }
+//                goTo.addOnStartedListener(() -> {
+//                });
 
-           setAnimating(false);
-        });
+                goTo.run();
+
+                pepperLog.appendLog(TAG, "DONE FOLLOWING");
+                setAnimating(false);
+
+//                // Execute the GoTo action asynchronously.
+//                goToFuture = goTo.async().run();
+//
+//                goToFuture.thenConsume(future -> {
+//                    if (future.isSuccess()) {
+//                        pepperLog.appendLog(TAG,"Follow done");
+//                        this.facingNearHuman = true;
+//                    } else if (future.hasError()) {
+//                        pepperLog.appendLog(TAG, String.format("Follow error: %s", future.getErrorMessage()));
+//                    } else if (future.isCancelled()) {
+//                        pepperLog.appendLog(TAG, "Follow cancelled");
+//                    }
+//
+//                    setAnimating(false);
+//                });
+            });
     }
 
     private double getDistance(Frame robotFrame, Human human) {
@@ -738,5 +938,34 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         AttachedFrame attachedFrame = humanFrame.makeAttachedFrame(transform);
         // Returns the corresponding Frame.
         return attachedFrame.frame();
+    }
+
+    public boolean isBatteryLow() {
+        return (batteryLow && !isBatteryCharging());
+    }
+
+    public void setBatteryLow(boolean batteryLow) {
+        this.batteryLow = batteryLow;
+    }
+
+    public boolean isBatteryCharging() {
+        return batteryCharging;
+    }
+
+    public void setBatteryCharging(boolean batteryCharging) {
+        this.batteryCharging = batteryCharging;
+    }
+
+    public boolean isHumanPresent() {
+        return humanPresent;
+    }
+    public boolean isHumanEngaged() {
+        return humanEngaged;
+    }
+    public boolean isMappingComplete() {
+        return mappingComplete;
+    }
+    public boolean isMappingInProgress() {
+        return mappingInProgress;
     }
 }

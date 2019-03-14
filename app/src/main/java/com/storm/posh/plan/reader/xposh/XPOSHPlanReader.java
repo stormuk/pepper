@@ -135,10 +135,12 @@ public class XPOSHPlanReader extends PlanReader {
                 PlanElement triggered = Plan.getInstance().findActionPattern(ceElement.getAttribute("triggers"));
 
                 if (triggered == null) {
+                    Log.d(TAG, "CREATING EMPTY COMPETENCE: "+ceElement.getAttribute("triggers"));
                     triggered = Plan.getInstance().findCompetence(ceElement.getAttribute("triggers"));
                 }
 
                 if (triggered == null) {
+                    Log.d(TAG, "CREATING EMPTY ACTION: "+ceElement.getAttribute("triggers"));
                     triggered = Plan.getInstance().createAction(ceElement.getAttribute("triggers"));
                 }
 
