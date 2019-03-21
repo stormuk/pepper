@@ -75,7 +75,6 @@ public class Planner {
 
             if (currentPriority == -1 || currentPriority == drive.getPriority()) {
                 if (drive.getGoals().size() != 0) {
-                    pepperLog.appendLog(TAG, "Has goals, checking...");
                     int numGoalsMet = 0;
 
                     for (Sense goal : drive.getGoals()) {
@@ -208,8 +207,6 @@ public class Planner {
         int numSensesMatched = 0;
         int numSensesNeeded = competenceElement.getSenses().size();
 
-        pepperLog.appendLog(TAG, String.format("Checking %d senses", competenceElement.getSenses().size()));
-
         for (Sense sense : competenceElement.getSenses()) {
             pepperLog.appendLog(TAG, sense.getNameOfElement());
             numSensesMatched = checkSense(numSensesMatched, sense);
@@ -240,11 +237,9 @@ public class Planner {
             } else {
                 pepperLog.appendLog(TAG, "Nothing to trigger!");
             }
-            pepperLog.appendLog(TAG, "yay?");
             return true;
         } else {
             // sense mismatch
-            pepperLog.appendLog(TAG, "nay?");
             pepperLog.appendLog(TAG, String.format("Only matched %d of %d senses", numSensesMatched, numSensesNeeded));
             return false;
         }
@@ -294,7 +289,6 @@ public class Planner {
     private int checkSense(int numTriggersTrue, Sense sense) {
         int origNumTriggersTrue = numTriggersTrue;
 
-        pepperLog.appendLog(TAG, String.format("Comparator: %s, Value: %s", sense.getComparator(), sense.getValue()));
         switch (sense.getComparator()) {
             case "bool":
                 if (SenseIsBoolean(sense)) {
@@ -337,11 +331,11 @@ public class Planner {
                 break;
         }
 
-        if (numTriggersTrue != origNumTriggersTrue) {
-            pepperLog.appendLog(TAG, "Sense true");
-        } else {
-            pepperLog.appendLog(TAG, "Sense false");
-        }
+//        if (numTriggersTrue != origNumTriggersTrue) {
+//            pepperLog.appendLog(TAG, "Sense true");
+//        } else {
+//            pepperLog.appendLog(TAG, "Sense false");
+//        }
 
         return numTriggersTrue;
     }
@@ -351,18 +345,18 @@ public class Planner {
         if (sense.getBooleanValue()) {
 //            pepperLog.appendLog(TAG, "comparator wants true");
             if (behaviourLibrary.getBooleanSense(sense)) {
-                pepperLog.appendLog(TAG, "comparator matches");
+//                pepperLog.appendLog(TAG, "comparator matches");
                 return true;
             }
         } else {
 //            pepperLog.appendLog(TAG, "comparator wants false");
             if (!behaviourLibrary.getBooleanSense(sense)) {
-                pepperLog.appendLog(TAG, "comparator matches");
+//                pepperLog.appendLog(TAG, "comparator matches");
                 return true;
             }
         }
 
-        pepperLog.appendLog(TAG, "comparator does not match");
+//        pepperLog.appendLog(TAG, "comparator does not match");
 
         return false;
     }
@@ -372,7 +366,6 @@ public class Planner {
     }
 
     private boolean SenseIsLessThan(Sense sense) {
-        pepperLog.appendLog(TAG, String.format("values %d vs %d", behaviourLibrary.getDoubleSense(sense), sense.getDoubleValue()));
         return (behaviourLibrary.getDoubleSense(sense) < sense.getDoubleValue());
     }
 

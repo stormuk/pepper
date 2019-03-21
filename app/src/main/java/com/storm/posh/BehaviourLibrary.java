@@ -159,8 +159,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         haveWavedLeft = false;
         haveWavedRight = false;
         safeToMap = true;
-        mappingInProgress = false;
-        mappingComplete = false;
+//        mappingInProgress = false;
+//        mappingComplete = false;
     }
 
     public boolean getBooleanSense(Sense sense) {
@@ -328,15 +328,15 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
             setActive();
         }
 
+
         FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
             Say say = SayBuilder.with(qiContext) // Create the builder with the context.
                     .withText("My battery is low, please plug me in") // Set the text to say.
                     .build(); // Build the say action.
 
             this.talking = true;
-
             // Execute the action.
-            say.run();
+            say.async().run();
 
             this.talking = false;
         });
@@ -377,6 +377,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
             setActive();
         }
 
+
         pepperLog.appendLog(TAG, "1");
 
         FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
@@ -409,10 +410,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
                     if (heardPhrase.getText().equals("Stop")) {
                         this.heardStop = true;
-                    }
-
-                    if (result.equals("Stop")) {
-                        pepperLog.appendLog(TAG, "Heard equals Stop");
+                        listenFuture.requestCancellation();
+                        pepperLog.appendLog(TAG, "Heard Stop");
                     }
 
                 } catch (ExecutionException e) {
@@ -435,31 +434,6 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         }
     }
 
-    public void approachHuman() {
-        pepperLog.appendLog(TAG, "Approach human?");
-        if (!humanPresent) {
-            pepperLog.appendLog(TAG, "Cannot approach when no human present");
-            return;
-        } else if (animating){
-            pepperLog.appendLog(TAG, "Cannot approach, already animating");
-            return;
-        } else {
-            setActive();
-        }
-
-//        humanAwareness = qiContext.getHumanAwareness();
-//        Human recommendedHuman = humanAwareness.getRecommendedHumanToEngage();
-
-        if (recommendedHumanToEngage != null) {
-            pepperLog.appendLog(TAG, "Approaching human...");
-            pepperLog.appendLog(TAG, String.format("Recommended human: %s", recommendedHumanToEngage));
-
-            followHuman(recommendedHumanToEngage);
-
-        } else {
-            pepperLog.appendLog(TAG, "No recommended human");
-        }
-    }
 
     public void doExplore() {
         if (animating) {
@@ -476,6 +450,12 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
     public void doHumans() {
         pepperLog.appendLog(TAG, "Initialising human tracking");
+
+        if (humanAwareness != null) {
+            humanAwareness.removeAllOnHumansAroundChangedListeners();
+            humanAwareness.removeAllOnEngagedHumanChangedListeners();
+        }
+
         this.humanPresent = false;
         humanAwareness = qiContext.getHumanAwareness();
 
@@ -786,8 +766,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
         FutureUtils
                 .wait(0, TimeUnit.SECONDS)
-                .andThenConsume(ignore -> doHumans());
-//                .andThenConsume(ignore -> doMapping())
+                .andThenConsume(ignore -> doHumans())
+                .andThenConsume(ignore -> doMapping());
 
         // The robot focus is gained.
 //
@@ -858,7 +838,35 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         return Collections.min(humans, comparator);
     }
 
+
+    public void approachHuman() {
+        pepperLog.appendLog(TAG, "Approach human?");
+        if (!humanPresent) {
+            pepperLog.appendLog(TAG, "Cannot approach when no human present");
+            return;
+        } else if (animating){
+            pepperLog.appendLog(TAG, "Cannot approach, already animating");
+            return;
+        } else {
+            setActive();
+        }
+
+//        humanAwareness = qiContext.getHumanAwareness();
+//        Human recommendedHuman = humanAwareness.getRecommendedHumanToEngage();
+
+        if (recommendedHumanToEngage != null) {
+            pepperLog.appendLog(TAG, "Approaching human...");
+            pepperLog.appendLog(TAG, String.format("Recommended human: %s", recommendedHumanToEngage));
+
+            followHuman(recommendedHumanToEngage);
+
+        } else {
+            pepperLog.appendLog(TAG, "No recommended human");
+        }
+    }
+
     private void followHuman(Human human) {
+        pepperLog.appendLog(TAG, "Follow human?");
         // Create the target frame from the human.
         Frame targetFrame = createTargetFrame(human);
 
@@ -930,12 +938,16 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     }
 
     private Frame createTargetFrame(Human humanToFollow) {
+        pepperLog.appendLog(TAG, "Create target frame 1?");
         // Get the human head frame.
         Frame humanFrame = humanToFollow.getHeadFrame();
+        pepperLog.appendLog(TAG, "Create target frame 2?");
         // Create a transform for Pepper to stay at 1 meter in front of the human.
         Transform transform = TransformBuilder.create().fromXTranslation(1);
+        pepperLog.appendLog(TAG, "Create target frame 3?");
         // Create an AttachedFrame that automatically updates with the human frame.
         AttachedFrame attachedFrame = humanFrame.makeAttachedFrame(transform);
+        pepperLog.appendLog(TAG, "Create target frame 4?");
         // Returns the corresponding Frame.
         return attachedFrame.frame();
     }

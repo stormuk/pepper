@@ -78,14 +78,14 @@
                 <Sense name="FacingNearHuman" value="0" comparator="bool"></Sense>
             </Senses>
         </CompetenceElement>
-        <CompetenceElement name="CE-ListenForStop" triggers="AP-ListenForStop">
-            <Senses>
-                <Sense name="Listening" value="0" comparator="bool"></Sense>
-            </Senses>
-        </CompetenceElement>
         <CompetenceElement name="CE-Stop" triggers="AP-DoNotAnnoy">
             <Senses>
                 <Sense name="HeardStop" value="1" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+        <CompetenceElement name="CE-ListenForStop" triggers="AP-ListenForStop">
+            <Senses>
+                <Sense name="Listening" value="0" comparator="bool"></Sense>
             </Senses>
         </CompetenceElement>
         <CompetenceElement name="CE-WaveLeft" triggers="AP-WaveLeft">
@@ -168,8 +168,8 @@
     </Competences>
 
     <DriveElements>
-        <DriveElement name="DE-Mapping" triggers="C-Mapping" checkTime="5">
-        </DriveElement>
+        <!--DriveElement name="DE-Mapping" triggers="C-Mapping" checkTime="5">
+        </DriveElement-->
 
         <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="20">
             <Senses>
@@ -215,14 +215,14 @@
     </DriveElements>
 
     <Drives>
-        <Drive name="D-Mapping" priority="0">
+        <!--Drive name="D-Mapping" priority="0">
             <Senses>
                 <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
             </Senses>
             <DriveElements>
                 <DriveElement name="DE-Mapping"></DriveElement>
             </DriveElements>
-        </Drive>
+        </Drive-->
 
 
         <Drive name="D-Battery" priority="1">

@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.aldebaran.qi.sdk.QiSDK;
 import com.aldebaran.qi.sdk.design.activity.RobotActivity;
+import com.aldebaran.qi.sdk.design.activity.conversationstatus.SpeechBarDisplayStrategy;
 import com.aldebaran.qi.sdk.util.FutureUtils;
 import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.Sense;
@@ -57,6 +58,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setSpeechBarDisplayStrategy(SpeechBarDisplayStrategy.OVERLAY);
 
         plannerLog = findViewById(R.id.textPlannerLog);
         currentDriveName = findViewById(R.id.currentDrive);
@@ -92,7 +94,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
             if (behaviourLibrary.hasQiContext()) {
                 appendLog(TAG, "STARTING");
 
-                FutureUtils.wait(3, TimeUnit.SECONDS).andThenConsume(ignore_too -> behaviourLibrary.searchHumans());
+                FutureUtils.wait(3, TimeUnit.SECONDS).andThenConsume(ignore_too -> behaviourLibrary.doMapping());
             } else {
                 appendLog(TAG, "CANNOT START YET");
             }
@@ -104,8 +106,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
             behaviourLibrary.stopMoving();
         });
-
-
 
         readPlan();
     }
@@ -299,6 +299,8 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
     public void runPlan(View view) {
         clearLog();
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume(ignore -> behaviourLibrary.doHumans());
+
         stopRunningPlan = false;
 
         final Handler handler = new Handler();
@@ -315,6 +317,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
                 }
 
                 try {
+                    clearLog();
                     appendLog(" ");
                     appendLog(" ");
                     appendLog(" ");
