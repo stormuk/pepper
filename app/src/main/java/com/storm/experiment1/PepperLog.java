@@ -12,6 +12,8 @@ public interface PepperLog {
 
     void setCurrentDrive(DriveCollection drive);
     void setCurrentElement(PlanElement element);
+    void addCurrentElement(PlanElement element);
+    void clearCurrentElements();
 
     void checkedBooleanSense(String tag, Sense sense, boolean value);
     void checkedDoubleSense(String tag, Sense sense, double value);

@@ -170,7 +170,7 @@ public class Planner {
 
     private void setCurrentElement(PlanElement element) {
         plan.getCurrentDrive().setCurrentElement(element);
-        pepperLog.setCurrentElement(element);
+        pepperLog.addCurrentElement(element);
     }
 
     private void competenceHandler(Competence competence) {

@@ -17,6 +17,8 @@ public class DriveCollection extends ElementWithTrigger {
 
     private boolean realTime = true;
 
+    private boolean current = false;
+
     private volatile List<Sense> goals  = new LinkedList<>();
 
     private volatile List<DriveElement> driveElements = new LinkedList<>();
@@ -120,5 +122,13 @@ public class DriveCollection extends ElementWithTrigger {
 
     public void setCurrentElement(PlanElement currentElement) {
         this.currentElement = currentElement;
+    }
+
+    public boolean isCurrent() {
+        return current;
+    }
+
+    public void setCurrent(boolean current) {
+        this.current = current;
     }
 }

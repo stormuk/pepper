@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.aldebaran.qi.sdk.QiSDK;
@@ -23,6 +24,7 @@ import com.storm.posh.plan.Plan;
 
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +55,14 @@ public class MainActivity extends RobotActivity implements PepperLog {
     public Button startButton;
     public Button stopButton;
 
+    private ArrayList currentElements = new ArrayList();
+
+    ListView drivesList;
+    ListView elementsList;
+
+    DrivesListAdapter drivesAdapter;
+    ElementsListAdapter elementsAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +70,10 @@ public class MainActivity extends RobotActivity implements PepperLog {
         setContentView(R.layout.activity_main);
         setSpeechBarDisplayStrategy(SpeechBarDisplayStrategy.OVERLAY);
 
-        plannerLog = findViewById(R.id.textPlannerLog);
-        currentDriveName = findViewById(R.id.currentDrive);
-        currentElementName = findViewById(R.id.currentElement);
-        checkedSenses = findViewById(R.id.checkedSenses);
+//        plannerLog = findViewById(R.id.textPlannerLog);
+//        currentDriveName = findViewById(R.id.currentDrive);
+//        currentElementName = findViewById(R.id.currentElement);
+//        checkedSenses = findViewById(R.id.checkedSenses);
 
 //        rootLayout = findViewById(R.id.root_layout);
 
@@ -91,13 +101,15 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
 
         startButton.setOnClickListener(ignore -> {
-            if (behaviourLibrary.hasQiContext()) {
-                appendLog(TAG, "STARTING");
+            runPlan();
+//            if (behaviourLibrary.hasQiContext()) {
+//                appendLog(TAG, "STARTING");
+//
+//                FutureUtils.wait(3, TimeUnit.SECONDS).andThenConsume(ignore_too -> behaviourLibrary.doMapping());
+//            } else {
+//                appendLog(TAG, "CANNOT START YET");
+//            }
 
-                FutureUtils.wait(3, TimeUnit.SECONDS).andThenConsume(ignore_too -> behaviourLibrary.doMapping());
-            } else {
-                appendLog(TAG, "CANNOT START YET");
-            }
         });
 
         stopButton.setOnClickListener(ignore -> {
@@ -106,6 +118,9 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
             behaviourLibrary.stopMoving();
         });
+
+        drivesList = (ListView) findViewById(R.id.drives_list);
+        elementsList = (ListView) findViewById(R.id.elements_list);
 
         readPlan();
     }
@@ -123,7 +138,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
         runOnUiThread(new Runnable(){
             @Override
             public void run(){
-                plannerLog.append("\n" + formattedMessage);
+//                plannerLog.append("\n" + formattedMessage);
             }
         });
     }
@@ -143,7 +158,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
         runOnUiThread(new Runnable(){
             @Override
             public void run(){
-                plannerLog.setText("");
+//                plannerLog.setText("");
             }
         });
     }
@@ -182,17 +197,17 @@ public class MainActivity extends RobotActivity implements PepperLog {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                checkedSenses.setText("");
-                checkedSenses.append(String.format("Idle Time: %f\n\n", behaviourLibrary.getIdleTime()));
-
-                checkedSenses.append(String.format("Human Present: %b\n", behaviourLibrary.isHumanPresent()));
-                checkedSenses.append(String.format("Human Engaged: %b\n\n", behaviourLibrary.isHumanEngaged()));
-
-                checkedSenses.append(String.format("Mapping Complete: %b\n", behaviourLibrary.isMappingComplete()));
-                checkedSenses.append(String.format("Mapping In Progress: %b\n\n", behaviourLibrary.isMappingInProgress()));
-
-                checkedSenses.append(String.format("Battery Low: %b\n", behaviourLibrary.isBatteryLow()));
-                checkedSenses.append(String.format("Battery Charging: %b\n", behaviourLibrary.isBatteryCharging()));
+//                checkedSenses.setText("");
+//                checkedSenses.append(String.format("Idle Time: %f\n\n", behaviourLibrary.getIdleTime()));
+//
+//                checkedSenses.append(String.format("Human Present: %b\n", behaviourLibrary.isHumanPresent()));
+//                checkedSenses.append(String.format("Human Engaged: %b\n\n", behaviourLibrary.isHumanEngaged()));
+//
+//                checkedSenses.append(String.format("Mapping Complete: %b\n", behaviourLibrary.isMappingComplete()));
+//                checkedSenses.append(String.format("Mapping In Progress: %b\n\n", behaviourLibrary.isMappingInProgress()));
+//
+//                checkedSenses.append(String.format("Battery Low: %b\n", behaviourLibrary.isBatteryLow()));
+//                checkedSenses.append(String.format("Battery Charging: %b\n", behaviourLibrary.isBatteryCharging()));
             }
         });
     }
@@ -213,9 +228,9 @@ public class MainActivity extends RobotActivity implements PepperLog {
             @Override
             public void run() {
                 if (drive != null) {
-                    currentDriveName.setText(drive.getNameOfElement());
+//                    currentDriveName.setText(drive.getNameOfElement());
                 } else {
-                    currentDriveName.setText("Waiting...");
+//                    currentDriveName.setText("Waiting...");
                 }
             }
         });
@@ -229,12 +244,29 @@ public class MainActivity extends RobotActivity implements PepperLog {
             @Override
             public void run() {
                 if (element != null) {
-                    currentElementName.setText(element.getNameOfElement());
+//                    currentElementName.setText(element.getNameOfElement());
                 } else {
-                    currentElementName.setText("");
+//                    currentElementName.setText("");
                 }
             }
         });
+    }
+
+    @Override
+    public void addCurrentElement(final PlanElement element) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (element != null) {
+                    currentElements.add(element);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void clearCurrentElements() {
+        currentElements.clear();
     }
 
     @Override
@@ -264,7 +296,15 @@ public class MainActivity extends RobotActivity implements PepperLog {
     }
 
     private void displayPlan() {
-//        Output text summary of plan, or simple grid structure?
+        Plan plan = Plan.getInstance();
+
+        if (drivesAdapter == null || drivesAdapter.isStale(plan.getCurrentDrive())) {
+            drivesAdapter = new DrivesListAdapter(this, plan.getDriveCollections(), plan.getCurrentDrive());
+            drivesList.setAdapter(drivesAdapter);
+        }
+
+        elementsAdapter = new ElementsListAdapter(this, currentElements);
+        elementsList.setAdapter(elementsAdapter);
     }
 
 //    private void displayPlan() {
@@ -297,7 +337,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
 //        }
 //    }
 
-    public void runPlan(View view) {
+    public void runPlan() {
         clearLog();
         FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume(ignore -> behaviourLibrary.doHumans());
 
@@ -318,15 +358,17 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
                 try {
                     clearLog();
+                    clearCurrentElements();
                     appendLog(" ");
                     appendLog(" ");
                     appendLog(" ");
                     appendLog(" ");
                     appendLog(" ");
-                    displaySenses();
+//                    displaySenses();
                     appendLog(" ");
                     appendLog(String.format("\n\n.... starting update #%d....\n\n", iteration));
                     completed = !planner.update();
+                    displayPlan();
 
                 } catch (Exception e) {
                     // TODO: handle exception
