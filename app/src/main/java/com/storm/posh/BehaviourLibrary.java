@@ -78,6 +78,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     private boolean listening = false;
     private boolean animating = false;
 
+    private List<Human> humans;
     private boolean humanPresent = false;
     private boolean humanEngaged = false;
     private boolean facingNearHuman = false;
@@ -117,6 +118,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
 
     private String[] humPhrases = {"hmmm", "humm", "doo-be doo", "hum", "What was that?", "Who's there?", "Tee hee"};
 
+    private Future<ListenResult> listenFuture;
 
     public BehaviourLibrary() { }
 
@@ -189,6 +191,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
             case "HumanPresent":
                 senseValue = humanPresent;
                 break;
+            case "HumanClose":
+                senseValue = isHumanClose();
             case "HumanEngaged":
                 senseValue = humanEngaged;
                 break;
@@ -294,6 +298,10 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
                 listenForStop();
                 break;
 
+            case "StopListening":
+                stopListening();
+                break;
+
             case "DoNotAnnoy":
                 this.doNotAnnoy = true;
                 break;
@@ -365,6 +373,16 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         });
     }
 
+    public void stopListening() {
+        if (!listening || listenFuture == null || listenFuture.isDone()) {
+            pepperLog.appendLog(TAG, "Not listening, can't stop");
+            return;
+        }
+        pepperLog.appendLog(TAG, "Requesting cancellation");
+        listenFuture.requestCancellation();
+        pepperLog.appendLog(TAG, "Cancellation requested!");
+    }
+
     public void listenForStop() {
         pepperLog.appendLog(TAG, "Listen for stop?");
         if (listening) {
@@ -393,7 +411,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
                 pepperLog.appendLog(TAG, "4");
             });
 
-            Future<ListenResult> listenFuture = listen.async().run();
+            this.listenFuture = listen.async().run();
 
             listenFuture.thenConsume(future -> {
                 this.listening = false;
@@ -464,6 +482,8 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
     }
 
     private void updateHumansAround(List<Human> humansAround) {
+        this.humans = humansAround;
+
         if (humansAround.isEmpty()) {
             this.humanPresent = false;
             pepperLog.appendLog(TAG, "No humans around");
@@ -838,6 +858,29 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         return Collections.min(humans, comparator);
     }
 
+    private boolean isHumanClose() {
+        pepperLog.appendLog(TAG, "Is human close?");
+        if (humans.isEmpty()) {
+            pepperLog.appendLog(TAG, "No humans, no close");
+            return false;
+        }
+
+        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume(ignore -> {
+            pepperLog.appendLog(TAG, "STEP 1");
+            // Get the robot frame.
+            Frame robotFrame = qiContext.getActuation().robotFrame();
+
+            pepperLog.appendLog(TAG, "STEP 2");
+            Human closestHuman = getClosestHuman(humans);
+
+            pepperLog.appendLog(TAG, "STEP 3");
+            double distance = getDistance(robotFrame, closestHuman);
+            pepperLog.appendLog(TAG, String.format("Human distance is %f", distance));
+
+            pepperLog.appendLog(TAG, "STEP 4");
+        });
+        return false;
+    }
 
     public void approachHuman() {
         pepperLog.appendLog(TAG, "Approach human?");
@@ -943,7 +986,7 @@ public class BehaviourLibrary implements RobotLifecycleCallbacks {
         Frame humanFrame = humanToFollow.getHeadFrame();
         pepperLog.appendLog(TAG, "Create target frame 2?");
         // Create a transform for Pepper to stay at 1 meter in front of the human.
-        Transform transform = TransformBuilder.create().fromXTranslation(1);
+        Transform transform = TransformBuilder.create().fromXTranslation(0.9);
         pepperLog.appendLog(TAG, "Create target frame 3?");
         // Create an AttachedFrame that automatically updates with the human frame.
         AttachedFrame attachedFrame = humanFrame.makeAttachedFrame(transform);

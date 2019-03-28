@@ -132,6 +132,7 @@ public class Planner {
                 }
 
                 if (numTriggersMet == numTriggersNeeded) {
+                    setCurrentElement(driveElement);
                     pepperLog.notifyABOD3(driveElement.getNameOfElement(), "DE");
                     PlanElement elementToBeTriggered = driveElement.getTriggeredElement();
 
@@ -174,7 +175,6 @@ public class Planner {
     }
 
     private void competenceHandler(Competence competence) {
-        setCurrentElement(competence);
         pepperLog.appendLog(TAG, String.format("Running competence: %s", competence));
 
         int numGoalsMet = 0;
@@ -185,6 +185,7 @@ public class Planner {
         }
 
         if (numGoals == 0 || numGoalsMet < numGoals) {
+            setCurrentElement(competence);
             pepperLog.notifyABOD3(competence.getNameOfElement(), "C");
 
             for (CompetenceElement competenceElement : competence.getCompetenceElements()) {
@@ -202,7 +203,6 @@ public class Planner {
     }
 
     private boolean competenceElementHandler(CompetenceElement competenceElement) {
-        setCurrentElement(competenceElement);
         pepperLog.appendLog(TAG, String.format("Running competence element: %s", competenceElement));
         int numSensesMatched = 0;
         int numSensesNeeded = competenceElement.getSenses().size();
@@ -215,6 +215,7 @@ public class Planner {
         pepperLog.appendLog(TAG, String.format("Checked senses: %d vs %d", numSensesMatched, numSensesNeeded));
 
         if (numSensesMatched == numSensesNeeded) {
+            setCurrentElement(competenceElement);
             pepperLog.notifyABOD3(competenceElement.getNameOfElement(), "CE");
             PlanElement elementToBeTriggered = competenceElement.getTriggeredElement();
 

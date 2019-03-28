@@ -45,7 +45,7 @@ public class DrivesListAdapter extends ArrayAdapter {
 
         //this code sets the values of the objects to values from the arrays
         driveName.setText(drive.getNameOfElement());
-        if (drive.getNameOfElement() == currentDrive.getNameOfElement()) {
+        if (currentDrive != null && drive.getNameOfElement() == currentDrive.getNameOfElement()) {
             driveName.setTypeface(null, Typeface.BOLD);
         } else {
             driveName.setTypeface(null, Typeface.NORMAL);

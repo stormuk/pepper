@@ -21,6 +21,11 @@
                 <Action name="ListenForStop"></Action>
             </Actions>
         </ActionPattern>
+        <ActionPattern name="AP-StopListening">
+            <Actions>
+                <Action name="StopListening"></Action>
+            </Actions>
+        </ActionPattern>
         <ActionPattern name="AP-DoNotAnnoy">
             <Actions>
                 <Action name="DoNotAnnoy"></Action>
@@ -171,29 +176,40 @@
         <!--DriveElement name="DE-Mapping" triggers="C-Mapping" checkTime="5">
         </DriveElement-->
 
-        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="20">
+        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="10">
             <Senses>
                 <Sense name="BatteryLow" value="1" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
 
 
-        <DriveElement name="DE-Annoy" triggers="C-Annoy" checkTime="5">
+        <DriveElement name="DE-Annoy" triggers="C-Annoy" checkTime="0">
             <Senses>
                 <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
                 <Sense name="DoNotAnnoy" value="0" comparator="bool"></Sense>
                 <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+                <Sense name="HumanClose" value="1" comparator="bool"></Sense>
                 <!--Sense name="HumanEngaged" value="0" comparator="bool"></Sense-->
             </Senses>
         </DriveElement>
-        <DriveElement name="DE-Approach" triggers="C-Approach" checkTime="3">
+        <DriveElement name="DE-Approach" triggers="C-Approach" checkTime="5">
             <Senses>
                 <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
                 <Sense name="DoNotAnnoy" value="0" comparator="bool"></Sense>
                 <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+                <Sense name="HumanClose" value="0" comparator="bool"></Sense>
                 <!--Sense name="HumanEngaged" value="0" comparator="bool"></Sense-->
             </Senses>
         </DriveElement>
+        <DriveElement name="DE-Reset" triggers="AP-StopListening" checkTime="0">
+            <Senses>
+                <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
+                <Sense name="DoNotAnnoy" value="0" comparator="bool"></Sense>
+                <Sense name="HumanPresent" value="0" comparator="bool"></Sense>
+                <Sense name="Listening" value="1" comparator="bool"></Sense>
+            </Senses>
+        </DriveElement>
+
 
 
 
@@ -238,6 +254,7 @@
             <DriveElements>
                 <DriveElement name="DE-Approach"></DriveElement>
                 <DriveElement name="DE-Annoy"></DriveElement>
+                <DriveElement name="DE-Reset"></DriveElement>
             </DriveElements>
         </Drive>
 
@@ -255,141 +272,3 @@
 
     </Drives>
 </Plan>
-<!--
-
-<Plan>
-    <ActionPatterns>
-        <ActionPattern name="AP-WaveLeft">
-            <Action name="WaveLeft"></Action>
-        </ActionPattern>
-        <ActionPattern name="AP-WaveRight">
-            <Action name="WaveRight"></Action>
-        </ActionPattern>
-
-        <ActionPattern name="AP-LookAtHuman">
-            <Action name="LookAtClosestHuman"></Action>
-        </ActionPattern>
-    </ActionPatterns>
-
-
-    <CompetenceElements>
-        <CompetenceElement name="CE-WaveLeft" triggers="AP-WaveLeft">
-            <Senses>
-                <Sense name="HaveWavedLeft" value="0" comparator="bool"></Sense>
-            </Senses>
-        </CompetenceElement>
-
-        <CompetenceElement name="CE-KeepTalking" triggers="">
-            <Senses>
-                <Sense name=""></Sense>
-            </Senses>
-        </CompetenceElement>
-    </CompetenceElements>
-
-
-
-
-    <Competences>
-        <Competence name="C-WaveLeft">
-            <Senses>
-                <Sense name="HaveWavedLeft" value="1" comparator="bool"></Sense>
-            </Senses>
-            <CompetenceElements>
-                <CompetenceElement name="CE-WaveLeft"></CompetenceElement>
-            </CompetenceElements>
-        </Competence>
-
-        <Competence name="C-Talk">
-            <Senses>
-                <Sense name="TalkConcluded" value="1" comparator="bool"></Sense>
-            </Senses>
-            <CompetenceElements>
-                <CompetenceElement name="AP-StartTalking"></CompetenceElement>
-                <CompetenceElement name="CE-KeepTalking"></CompetenceElement>
-            </CompetenceElements>
-        </Competence>
-
-
-    </Competences>
-
-
-
-    <DriveElements>
-        <DriveElement name="DE-WaveLeft" triggers="C-WaveLeft" checkTime="0">
-            <Senses>
-                <Sense name="HaveWavedLeft" value="0" comparator="bool"></Sense>
-            </Senses>
-        </DriveElement>
-        <DriveElement name="DE-WaveRight" triggers="AP-WaveRight" checkTime="0">
-            <Senses>
-                <Sense name="HaveWavedRight" value="0" comparator="bool"></Sense>
-            </Senses>
-        </DriveElement>
-
-
-
-
-
-
-        <DriveElement name="DE-LookAtHuman" triggers="AP-LookAtHuman" checkTime="0">
-            <Senses>
-                <Sense name="HumanCount" value="1" comparator=">="></Sense>
-            </Senses>
-        </DriveElement>
-
-        <DriveElement name="DE-FindHuman" triggers="C-Explore" checkTime="1000">
-            <Senses>
-                <Sense name="HumanCount" value="0" comparator="=="></Sense>
-                <Sense name="LookedAround" value="1" comparator="bool"></Sense>
-            </Senses>
-        </DriveElement>
-
-        <DriveElement name="DE-EngageHuman" triggers="C-Talk" checkTime="0">
-            <Sense name="HumanCount" value="1" comparator=">="></Sense>
-            <Sense name="LookingAtHuman" value="1" comparator="bool"></Sense>
-            <Sense name="BeingLookedAt" value="1" comparator="bool"></Sense>
-        </DriveElement>
-
-        <DriveElement name="DE-Respond" triggers="C-Talk" checkTime="0">
-            <Sense name="HumanCount" value="1" comparator=">="></Sense>
-            <Sense name="HumanHasJustSpoken" value="1" comparator="bool"></Sense>
-        </DriveElement>
-    </DriveElements>
-
-
-    <Drives>
-        <Drive name="D-WaveLeft">
-            <Senses>
-                <Sense name="HaveWavedLeft" value="1" comparator="bool"></Sense>
-            </Senses>
-            <DriveElements>
-                <DriveElement name="DE-WaveLeft"></DriveElement>
-            </DriveElements>
-        </Drive>
-        <Drive name="D-WaveRight">
-            <Senses>
-                <Sense name="HaveWavedRight" value="1" comparator="bool"></Sense>
-            </Senses>
-            <DriveElements>
-                <DriveElement name="DE-WaveRight"></DriveElement>
-            </DriveElements>
-        </Drive>
-
-        <Drive name="D-Respond">
-            <DriveElements>
-                <DriveElement name="DE-Respond"></DriveElement>
-            </DriveElements>
-        </Drive>
-
-        <Drive name="D-Interact">
-            <Senses>
-                <Sense name="HaveInteracted" value="1" comparator="bool"></Sense>
-            </Senses>
-            <DriveElements>
-                <DriveElement name="DE-LookAtHuman"></DriveElement>
-                <DriveElement name="DE-EngageHuman"></DriveElement>
-            </DriveElements>
-        </Drive>
-    </Drives>
-</Plan>
- -->

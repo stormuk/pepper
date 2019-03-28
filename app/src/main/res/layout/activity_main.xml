@@ -30,22 +30,25 @@
     <ListView
         android:id="@+id/drives_list"
         android:layout_width="432dp"
-        android:layout_height="505dp"
+        android:layout_height="432dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="96dp"
+        android:layout_marginBottom="96dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ListView
         android:id="@+id/elements_list"
-        android:layout_width="467dp"
-        android:layout_height="462dp"
+        android:layout_width="432dp"
+        android:layout_height="432dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="96dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="96dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/drives_list"
         app:layout_constraintTop_toTopOf="parent" />
 

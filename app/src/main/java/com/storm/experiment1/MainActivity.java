@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -62,6 +63,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
     DrivesListAdapter drivesAdapter;
     ElementsListAdapter elementsAdapter;
+    NoElementsListAdapter noElementsAdapter;
 
 
     @Override
@@ -303,8 +305,18 @@ public class MainActivity extends RobotActivity implements PepperLog {
             drivesList.setAdapter(drivesAdapter);
         }
 
-        elementsAdapter = new ElementsListAdapter(this, currentElements);
-        elementsList.setAdapter(elementsAdapter);
+        if (currentElements.isEmpty()) {
+            if (noElementsAdapter == null) {
+                ArrayList noElement = new ArrayList();
+                noElement.add("Performing no action...");
+                noElementsAdapter = new NoElementsListAdapter(this, noElement);
+            }
+            elementsList.setAdapter(noElementsAdapter);
+        } else {
+//            Collections.reverse(currentElements);
+            elementsAdapter = new ElementsListAdapter(this, currentElements);
+            elementsList.setAdapter(elementsAdapter);
+        }
     }
 
 //    private void displayPlan() {
@@ -359,12 +371,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
                 try {
                     clearLog();
                     clearCurrentElements();
-                    appendLog(" ");
-                    appendLog(" ");
-                    appendLog(" ");
-                    appendLog(" ");
-                    appendLog(" ");
-//                    displaySenses();
                     appendLog(" ");
                     appendLog(String.format("\n\n.... starting update #%d....\n\n", iteration));
                     completed = !planner.update();

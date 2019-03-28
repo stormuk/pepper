@@ -1,8 +1,6 @@
 package com.storm.experiment1;
 
 import android.app.Activity;
-import android.graphics.Typeface;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,15 +8,14 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.storm.posh.plan.planelements.PlanElement;
-import com.storm.posh.plan.planelements.drives.DriveCollection;
 
 import java.util.List;
 
-public class ElementsListAdapter extends ArrayAdapter {
+public class NoElementsListAdapter extends ArrayAdapter {
     private final Activity context;
-    private final List<PlanElement> elements;
+    private final List<String> elements;
 
-    public ElementsListAdapter(Activity context, List<PlanElement> elements){
+    public NoElementsListAdapter(Activity context, List<String> elements){
 
         super(context, R.layout.elements_row, elements);
 
@@ -35,14 +32,7 @@ public class ElementsListAdapter extends ArrayAdapter {
         TextView elementNotes = (TextView) rowView.findViewById(R.id.elementNotes);
 
         //this code sets the values of the objects to values from the arrays
-        elementName.setText(elements.get(position).getNameOfElement());
-        elementNotes.setText("");
-
-        if ((position + 1) == elements.size()) {
-            elementName.setTypeface(null, Typeface.BOLD);
-        } else {
-            elementName.setTypeface(null, Typeface.NORMAL);
-        }
+        elementName.setText(elements.get(position));
 
         return rowView;
 
