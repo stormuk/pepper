@@ -1,7 +1,5 @@
 package com.storm.posh;
 
-import android.util.Log;
-
 import com.storm.experiment1.PepperLog;
 import com.storm.posh.plan.Plan;
 import com.storm.posh.plan.planelements.Sense;
@@ -21,7 +19,7 @@ public class Planner {
     private static final String TAG = Planner.class.getSimpleName();
     private volatile Plan plan;
 
-    public BehaviourLibrary behaviourLibrary;
+    public BaseBehaviourLibrary behaviourLibrary;
 
     public Planner(PepperLog pepperLog) {
         this.pepperLog = pepperLog;
@@ -30,7 +28,7 @@ public class Planner {
     public void start() {
         pepperLog.appendLog(TAG,"Starting Planner");
         plan = Plan.getInstance();
-        behaviourLibrary = BehaviourLibrary.getInstance();
+        behaviourLibrary = BaseBehaviourLibrary.getInstance();
 
         pepperLog.appendLog(TAG, "Got plan:");
         pepperLog.appendLog(TAG, plan.toString());

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Plan>
+    <ActionPatterns>
+        <ActionPattern name="AP-BatteryPrompt">
+            <Actions>
+                <Action name="PromptForBatteryCharge"></Action>
+            </Actions>
+        </ActionPattern>
+
+        <ActionPattern name="AP-AskForDie">
+            <Actions>
+                <Action name="AskForDie"></Action>
+            </Actions>
+        </ActionPattern>
+        <ActionPattern name="AP-ApproachTable">
+            <Actions>
+                <Action name="ApproachTable"></Action>
+            </Actions>
+        </ActionPattern>
+        <ActionPattern name="AP-CheckReady">
+            <Actions>
+                <Action name="CheckReady"></Action>
+            </Actions>
+        </ActionPattern>
+        <ActionPattern name="AP-RollDie">
+            <Actions>
+                <Action name="RollDie"></Action>
+            </Actions>
+        </ActionPattern>
+        <ActionPattern name="AP-AskForResult">
+            <Actions>
+                <Action name="AskForResult"></Action>
+            </Actions>
+        </ActionPattern>
+    </ActionPatterns>
+
+    <CompetenceElements>
+        <CompetenceElement name="CE-BatteryPrompt" triggers="AP-BatteryPrompt">
+            <Senses>
+                <Sense name="Talking" value="0" comparator="bool"></Sense>
+                <Sense name="Listening" value="0" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+
+        <CompetenceElement name="CE-AskForDie" triggers="AP-AskForDie"></CompetenceElement>
+        <CompetenceElement name="CE-ApproachTable" triggers="AP-ApproachTable">
+            <Senses>
+                <Sense name="AtTable" value="0" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+        <CompetenceElement name="CE-CheckReady" triggers="AP-CheckReady">
+            <Senses>
+                <Sense name="AtTable" value="1" comparator="bool"></Sense>
+                <Sense name="HumanReady" value="0" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+        <CompetenceElement name="CE-RollDie" triggers="AP-RollDie">
+            <Senses>
+                <Sense name="AtTable" value="1" comparator="bool"></Sense>
+                <Sense name="HumanReady" value="1" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+        <CompetenceElement name="CE-AskForResult" triggers="AP-AskForResult"></CompetenceElement>
+    </CompetenceElements>
+
+    <Competences>
+        <Competence name="C-BatteryPrompt">
+            <CompetenceElements>
+                <CompetenceElement name="CE-BatteryPrompt"></CompetenceElement>
+            </CompetenceElements>
+        </Competence>
+
+        <Competence name="C-HaveDie">
+            <CompetenceElements>
+                <CompetenceElement name="CE-AskForDie"></CompetenceElement>
+            </CompetenceElements>
+        </Competence>
+        <Competence name="C-RollDie">
+            <CompetenceElements>
+                <CompetenceElement name="CE-ApproachTable"></CompetenceElement>
+                <CompetenceElement name="CE-CheckReady"></CompetenceElement>
+                <CompetenceElement name="CE-RollDie"></CompetenceElement>
+            </CompetenceElements>
+        </Competence>
+        <Competence name="C-GetResult">
+            <CompetenceElements>
+                <CompetenceElement name="CE-AskForResult"></CompetenceElement>
+            </CompetenceElements>
+        </Competence>
+    </Competences>
+
+    <DriveElements>
+        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="10">
+            <Senses>
+                <Sense name="BatteryLow" value="1" comparator="bool"></Sense>
+            </Senses>
+        </DriveElement>
+
+        <DriveElement name="DE-HaveDie" triggers="C-HaveDie" checkTime="0">
+            <Senses>
+                <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+            </Senses>
+        </DriveElement>
+        <DriveElement name="DE-RollDie" triggers="C-RollDie" checkTime="0">
+            <Senses>
+                <!--<Sense name="HumanPresent" value="1" comparator="bool"></Sense>-->
+                <Sense name="HasDie" value="1" comparator="bool"></Sense>
+            </Senses>
+        </DriveElement>
+        <DriveElement name="DE-GetResult" triggers="C-GetResult" checkTime="0">
+            <Senses>
+                <!--<Sense name="HumanPresent" value="1" comparator="bool"></Sense>-->
+                <Sense name="HasRolled" value="1" comparator="bool"></Sense>
+            </Senses>
+        </DriveElement>
+    </DriveElements>
+
+    <Drives>
+        <Drive name="D-Battery" priority="1">
+            <DriveElements>
+                <DriveElement name="DE-BatteryPrompt"></DriveElement>
+            </DriveElements>
+        </Drive>
+
+        <Drive name="D-HaveDie" priority="2">
+            <Senses>
+                <Sense name="HasDie" value="1" comparator="bool"></Sense>
+            </Senses>
+            <DriveElements>
+                <DriveElement name="DE-HaveDie"></DriveElement>
+            </DriveElements>
+        </Drive>
+        <Drive name="D-RollDie" priority="3">
+            <Senses>
+                <Sense name="DieRolled" value="1" comparator="bool"></Sense>
+            </Senses>
+            <DriveElements>
+                <DriveElement name="DE-RollDie"></DriveElement>
+            </DriveElements>
+        </Drive>
+        <Drive name="D-GetResult" priority="4">
+            <Senses>
+                <Sense name="RollResult" value="0" comparator="gt"></Sense>
+            </Senses>
+            <DriveElements>
+                <DriveElement name="DE-GetResult"></DriveElement>
+            </DriveElements>
+        </Drive>
+    </Drives>
+</Plan>

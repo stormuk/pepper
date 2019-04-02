@@ -19,5 +19,5 @@ public interface PepperLog {
     void checkedDoubleSense(String tag, Sense sense, double value);
     void clearCheckedSenses();
 
-    void  notifyABOD3(String name, String type);
+    void notifyABOD3(String name, String type);
 }

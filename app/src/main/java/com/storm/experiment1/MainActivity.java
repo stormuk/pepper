@@ -18,7 +18,7 @@ import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.Sense;
 import com.storm.posh.plan.planelements.drives.DriveCollection;
 import com.storm.posh.plan.reader.xposh.XPOSHPlanReader;
-import com.storm.posh.BehaviourLibrary;
+import com.storm.posh.BaseBehaviourLibrary;
 import com.storm.posh.Planner;
 import com.storm.posh.plan.Plan;
 
@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -51,7 +50,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
     private TextView currentElementName;
 
     private PepperServer pepperServer;
-    private BehaviourLibrary behaviourLibrary;
+    private BaseBehaviourLibrary behaviourLibrary;
 
     public Button startButton;
     public Button stopButton;
@@ -64,6 +63,8 @@ public class MainActivity extends RobotActivity implements PepperLog {
     DrivesListAdapter drivesAdapter;
     ElementsListAdapter elementsAdapter;
     NoElementsListAdapter noElementsAdapter;
+
+    private int planResourceId;
 
 
     @Override
@@ -81,7 +82,11 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
         planner = new Planner(this);
 
-        behaviourLibrary = BehaviourLibrary.getInstance();
+        // configure for chosen plan
+        planResourceId = R.raw.plan_complex;
+        behaviourLibrary = new AnnoyBehaviourLibrary();
+        // end configure for chosen plan
+
         behaviourLibrary.setPepperLog(this);
         behaviourLibrary.setActivity(this);
 
@@ -95,7 +100,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
         pepperServer = new PepperServer(this);
 
         // Register the RobotLifecycleCallbacks to this Activity.
-        QiSDK.register(this, BehaviourLibrary.getInstance());
+        QiSDK.register(this, BaseBehaviourLibrary.getInstance());
 
 
         startButton = findViewById(R.id.start_button);
@@ -288,7 +293,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
         Plan.getInstance().cleanAllLists();
         XPOSHPlanReader planReader = new XPOSHPlanReader();
 
-        InputStream planFile = getResources().openRawResource(R.raw.complex_plan);
+        InputStream planFile = getResources().openRawResource(planResourceId);
 
         planReader.readFile(planFile);
 
@@ -474,7 +479,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
     @Override
     protected void onDestroy() {
         // Unregister the RobotLifecycleCallbacks for this Activity.
-        QiSDK.unregister(this, BehaviourLibrary.getInstance());
+        QiSDK.unregister(this, BaseBehaviourLibrary.getInstance());
         pepperServer.destroy();
         super.onDestroy();
     }
