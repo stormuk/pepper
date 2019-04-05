@@ -192,7 +192,7 @@
                 <!--Sense name="HumanEngaged" value="0" comparator="bool"></Sense-->
             </Senses>
         </DriveElement>
-        <DriveElement name="DE-Approach" triggers="C-Approach" checkTime="5">
+        <DriveElement name="DE-Approach" triggers="C-Approach" checkTime="1">
             <Senses>
                 <Sense name="MappingComplete" value="1" comparator="bool"></Sense>
                 <Sense name="DoNotAnnoy" value="0" comparator="bool"></Sense>

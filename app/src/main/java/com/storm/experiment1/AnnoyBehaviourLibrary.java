@@ -17,6 +17,7 @@ import com.aldebaran.qi.sdk.object.conversation.PhraseSet;
 import com.aldebaran.qi.sdk.object.conversation.Say;
 import com.aldebaran.qi.sdk.util.FutureUtils;
 import com.storm.posh.BaseBehaviourLibrary;
+import com.storm.posh.BehaviourLibrary;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 import com.storm.posh.plan.planelements.Sense;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 public class AnnoyBehaviourLibrary extends BaseBehaviourLibrary {
-    private static final String TAG = BaseBehaviourLibrary.class.getSimpleName();
+    private static final String TAG = AnnoyBehaviourLibrary.class.getSimpleName();
 
     private boolean doNotAnnoy = false;
     private boolean heardStop = false;

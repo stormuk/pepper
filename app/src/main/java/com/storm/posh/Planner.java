@@ -18,6 +18,7 @@ public class Planner {
     private PepperLog pepperLog;
     private static final String TAG = Planner.class.getSimpleName();
     private volatile Plan plan;
+    private int iteration;
 
     public BaseBehaviourLibrary behaviourLibrary;
 
@@ -34,7 +35,8 @@ public class Planner {
         pepperLog.appendLog(TAG, plan.toString());
     }
 
-    public boolean update() {
+    public boolean update(int iteration) {
+        this.iteration = iteration;
         pepperLog.clearCheckedSenses();
         pepperLog.setCurrentDrive(null);
         drivesHandler();
@@ -379,6 +381,9 @@ public class Planner {
         return (behaviourLibrary.getDoubleSense(sense) >= sense.getDoubleValue());
     }
 
+    public int getIteration() {
+        return iteration;
+    }
 }
 
 /*

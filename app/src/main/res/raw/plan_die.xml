@@ -7,9 +7,9 @@
             </Actions>
         </ActionPattern>
 
-        <ActionPattern name="AP-AskForDie">
+        <ActionPattern name="AP-AskToStart">
             <Actions>
-                <Action name="AskForDie"></Action>
+                <Action name="AskToStart"></Action>
             </Actions>
         </ActionPattern>
         <ActionPattern name="AP-ApproachTable">
@@ -42,9 +42,10 @@
             </Senses>
         </CompetenceElement>
 
-        <CompetenceElement name="CE-AskForDie" triggers="AP-AskForDie"></CompetenceElement>
+        <CompetenceElement name="CE-AskToStart" triggers="AP-AskToStart"></CompetenceElement>
         <CompetenceElement name="CE-ApproachTable" triggers="AP-ApproachTable">
             <Senses>
+                <Sense name="ReadyToStart" value="1" comparator="bool"></Sense>
                 <Sense name="AtTable" value="0" comparator="bool"></Sense>
             </Senses>
         </CompetenceElement>
@@ -70,9 +71,9 @@
             </CompetenceElements>
         </Competence>
 
-        <Competence name="C-HaveDie">
+        <Competence name="C-Start">
             <CompetenceElements>
-                <CompetenceElement name="CE-AskForDie"></CompetenceElement>
+                <CompetenceElement name="CE-AskToStart"></CompetenceElement>
             </CompetenceElements>
         </Competence>
         <Competence name="C-RollDie">
@@ -96,7 +97,7 @@
             </Senses>
         </DriveElement>
 
-        <DriveElement name="DE-HaveDie" triggers="C-HaveDie" checkTime="0">
+        <DriveElement name="DE-Start" triggers="C-Start" checkTime="0">
             <Senses>
                 <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
             </Senses>
@@ -104,7 +105,7 @@
         <DriveElement name="DE-RollDie" triggers="C-RollDie" checkTime="0">
             <Senses>
                 <!--<Sense name="HumanPresent" value="1" comparator="bool"></Sense>-->
-                <Sense name="HasDie" value="1" comparator="bool"></Sense>
+                <Sense name="ReadyToStart" value="1" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
         <DriveElement name="DE-GetResult" triggers="C-GetResult" checkTime="0">
@@ -122,12 +123,12 @@
             </DriveElements>
         </Drive>
 
-        <Drive name="D-HaveDie" priority="2">
+        <Drive name="D-Start" priority="2">
             <Senses>
-                <Sense name="HasDie" value="1" comparator="bool"></Sense>
+                <Sense name="ReadyToStart" value="1" comparator="bool"></Sense>
             </Senses>
             <DriveElements>
-                <DriveElement name="DE-HaveDie"></DriveElement>
+                <DriveElement name="DE-Start"></DriveElement>
             </DriveElements>
         </Drive>
         <Drive name="D-RollDie" priority="3">

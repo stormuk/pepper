@@ -45,6 +45,8 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     protected QiContext qiContext;
     protected MainActivity activity;
 
+    protected String currentAction;
+
     protected boolean batteryLow = false;
     protected boolean batteryCharging = false;
 
@@ -589,27 +591,28 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     }
 
     private boolean isHumanClose() {
-        pepperLog.appendLog(TAG, "Is human close?");
-        if (humans.isEmpty()) {
-            pepperLog.appendLog(TAG, "No humans, no close");
-            return false;
-        }
-
-        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume(ignore -> {
-            pepperLog.appendLog(TAG, "STEP 1");
-            // Get the robot frame.
-            Frame robotFrame = qiContext.getActuation().robotFrame();
-
-            pepperLog.appendLog(TAG, "STEP 2");
-            Human closestHuman = getClosestHuman(humans);
-
-            pepperLog.appendLog(TAG, "STEP 3");
-            double distance = getDistance(robotFrame, closestHuman);
-            pepperLog.appendLog(TAG, String.format("Human distance is %f", distance));
-
-            pepperLog.appendLog(TAG, "STEP 4");
-        });
-        return false;
+        pepperLog.appendLog(TAG, "Is human close? Always yes");
+        return true;
+//        if (humans.isEmpty()) {
+//            pepperLog.appendLog(TAG, "No humans, no close");
+//            return false;
+//        }
+//
+//        FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume(ignore -> {
+//            pepperLog.appendLog(TAG, "STEP 1");
+//            // Get the robot frame.
+//            Frame robotFrame = qiContext.getActuation().robotFrame();
+//
+//            pepperLog.appendLog(TAG, "STEP 2");
+//            Human closestHuman = getClosestHuman(humans);
+//
+//            pepperLog.appendLog(TAG, "STEP 3");
+//            double distance = getDistance(robotFrame, closestHuman);
+//            pepperLog.appendLog(TAG, String.format("Human distance is %f", distance));
+//
+//            pepperLog.appendLog(TAG, "STEP 4");
+//        });
+//        return false;
     }
 
     public void approachHuman() {

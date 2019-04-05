@@ -25,8 +25,6 @@ import com.storm.posh.plan.Plan;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends RobotActivity implements PepperLog {
@@ -83,7 +81,9 @@ public class MainActivity extends RobotActivity implements PepperLog {
         planner = new Planner(this);
 
         // configure for chosen plan
-        planResourceId = R.raw.plan_complex;
+//        planResourceId = R.raw.plan_die;
+//        behaviourLibrary = new DieBehaviourLibrary();
+        planResourceId = R.raw.plan_annoy;
         behaviourLibrary = new AnnoyBehaviourLibrary();
         // end configure for chosen plan
 
@@ -108,6 +108,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
 
         startButton.setOnClickListener(ignore -> {
+            Log.d(TAG, "Starting");
             runPlan();
 //            if (behaviourLibrary.hasQiContext()) {
 //                appendLog(TAG, "STARTING");
@@ -135,19 +136,12 @@ public class MainActivity extends RobotActivity implements PepperLog {
     @Override
     public void appendLog(final String tag, final String message, boolean server) {
         Log.d(tag, message);
-        final Date currentTime = Calendar.getInstance().getTime();
-        final String formattedMessage = String.format("%s [%s]: %s", logTimeFormat.format(currentTime), tag, message);
+//        final Date currentTime = Calendar.getInstance().getTime();
+        final String formattedMessage = String.format("%s|%s|%s", planner.getIteration(), tag, message);
 
         if (server) {
             pepperServer.sendMessage(formattedMessage);
         }
-
-        runOnUiThread(new Runnable(){
-            @Override
-            public void run(){
-//                plannerLog.append("\n" + formattedMessage);
-            }
-        });
     }
 
     @Override
@@ -278,7 +272,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
     @Override
     public void notifyABOD3(String name, String type) {
-        String message = String.format("ABOD3,%s,%s", name, type);
+        String message = String.format("ABOD3,%s,%s,%d", name, type, planner.getIteration());
 //        this.appendLog(TAG, message, false);
         pepperServer.sendMessage(message);
     }
@@ -378,7 +372,7 @@ public class MainActivity extends RobotActivity implements PepperLog {
                     clearCurrentElements();
                     appendLog(" ");
                     appendLog(String.format("\n\n.... starting update #%d....\n\n", iteration));
-                    completed = !planner.update();
+                    completed = !planner.update(iteration);
                     displayPlan();
 
                 } catch (Exception e) {
