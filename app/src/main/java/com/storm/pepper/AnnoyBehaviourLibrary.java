@@ -1,4 +1,4 @@
-package com.storm.experiment1;
+package com.storm.pepper;
 
 import com.aldebaran.qi.Future;
 import com.aldebaran.qi.sdk.QiContext;
@@ -17,7 +17,6 @@ import com.aldebaran.qi.sdk.object.conversation.PhraseSet;
 import com.aldebaran.qi.sdk.object.conversation.Say;
 import com.aldebaran.qi.sdk.util.FutureUtils;
 import com.storm.posh.BaseBehaviourLibrary;
-import com.storm.posh.BehaviourLibrary;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 import com.storm.posh.plan.planelements.Sense;
 

@@ -1,6 +1,6 @@
 package com.storm.posh;
 
-import com.storm.experiment1.PepperLog;
+import com.storm.pepper.PepperLog;
 import com.storm.posh.plan.Plan;
 import com.storm.posh.plan.planelements.Sense;
 import com.storm.posh.plan.planelements.PlanElement;

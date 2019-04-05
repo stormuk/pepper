@@ -1,4 +1,4 @@
-package com.storm.experiment1;
+package com.storm.pepper;
 
 import android.app.Activity;
 import android.view.LayoutInflater;
@@ -6,8 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-
-import com.storm.posh.plan.planelements.PlanElement;
 
 import java.util.List;
 

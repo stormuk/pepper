@@ -1,4 +1,4 @@
-package com.storm.experiment1;
+package com.storm.pepper;
 
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;

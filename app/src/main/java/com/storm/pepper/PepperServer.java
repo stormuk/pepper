@@ -1,4 +1,4 @@
-package com.storm.experiment1;
+package com.storm.pepper;
 
 import com.storm.posh.Planner;
 

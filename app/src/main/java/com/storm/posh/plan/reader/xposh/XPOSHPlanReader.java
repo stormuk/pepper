@@ -2,8 +2,6 @@ package com.storm.posh.plan.reader.xposh;
 
 import android.util.Log;
 
-import com.storm.experiment1.R;
-import com.storm.posh.Planner;
 import com.storm.posh.plan.Plan;
 import com.storm.posh.plan.planelements.PlanElement;
 import com.storm.posh.plan.planelements.Sense;

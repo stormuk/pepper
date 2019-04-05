@@ -24,8 +24,8 @@ import com.aldebaran.qi.sdk.object.human.Human;
 import com.aldebaran.qi.sdk.object.humanawareness.EngageHuman;
 import com.aldebaran.qi.sdk.object.humanawareness.HumanAwareness;
 import com.aldebaran.qi.sdk.util.FutureUtils;
-import com.storm.experiment1.MainActivity;
-import com.storm.experiment1.PepperLog;
+import com.storm.pepper.MainActivity;
+import com.storm.pepper.PepperLog;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 import com.storm.posh.plan.planelements.Sense;
 

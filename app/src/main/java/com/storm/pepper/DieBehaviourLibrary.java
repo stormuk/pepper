@@ -1,11 +1,9 @@
-package com.storm.experiment1;
+package com.storm.pepper;
 
 import com.aldebaran.qi.sdk.builder.SayBuilder;
-import com.aldebaran.qi.sdk.object.conversation.BodyLanguageOption;
 import com.aldebaran.qi.sdk.object.conversation.Say;
 import com.aldebaran.qi.sdk.util.FutureUtils;
 import com.storm.posh.BaseBehaviourLibrary;
-import com.storm.posh.BehaviourLibrary;
 import com.storm.posh.plan.planelements.Sense;
 import com.storm.posh.plan.planelements.action.ActionEvent;
 
