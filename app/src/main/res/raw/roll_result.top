@@ -1,0 +1,11 @@
+topic: ~roll_result()
+
+concept:(result) [1 2 3 4 5 6]
+concept:(tricksy) [7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+
+# Replying to speech
+u:(_~result) Thank you, I've recorded a $1 $rollResult=$1 ^endDiscuss($1)
+u:(_~tricksy) Are you sure? The die I rolled only had six sides!
+u:(can't see it) Oh dear, I messed up. Game over! ^endDiscuss(failed)
+u:(e:Dialog/NotUnderstood) I don't understand, what number is on the die?
+u:(e:Dialog/SpeakFailure) I can't answer this

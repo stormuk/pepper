@@ -106,7 +106,7 @@ public class Planner {
 
         pepperLog.appendLog(TAG, "No valid drive this time");
 
-        pepperLog.setCurrentDrive(null);
+        plan.setCurrentDrive(null);
 
         return false;
     }

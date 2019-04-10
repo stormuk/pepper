@@ -2,24 +2,33 @@ package com.storm.posh;
 
 import android.util.Log;
 
+import com.aldebaran.qi.Consumer;
 import com.aldebaran.qi.Future;
+import com.aldebaran.qi.sdk.Qi;
 import com.aldebaran.qi.sdk.QiContext;
 import com.aldebaran.qi.sdk.RobotLifecycleCallbacks;
 import com.aldebaran.qi.sdk.builder.GoToBuilder;
+import com.aldebaran.qi.sdk.builder.HolderBuilder;
 import com.aldebaran.qi.sdk.builder.LocalizeAndMapBuilder;
 import com.aldebaran.qi.sdk.builder.LocalizeBuilder;
 import com.aldebaran.qi.sdk.builder.SayBuilder;
 import com.aldebaran.qi.sdk.builder.TransformBuilder;
+import com.aldebaran.qi.sdk.object.actuation.Actuation;
 import com.aldebaran.qi.sdk.object.actuation.AttachedFrame;
 import com.aldebaran.qi.sdk.object.actuation.ExplorationMap;
 import com.aldebaran.qi.sdk.object.actuation.Frame;
+import com.aldebaran.qi.sdk.object.actuation.FreeFrame;
 import com.aldebaran.qi.sdk.object.actuation.GoTo;
 import com.aldebaran.qi.sdk.object.actuation.Localize;
 import com.aldebaran.qi.sdk.object.actuation.LocalizeAndMap;
+import com.aldebaran.qi.sdk.object.actuation.Mapping;
+import com.aldebaran.qi.sdk.object.conversation.Chat;
 import com.aldebaran.qi.sdk.object.conversation.ListenResult;
 import com.aldebaran.qi.sdk.object.conversation.Say;
 import com.aldebaran.qi.sdk.object.geometry.Transform;
 import com.aldebaran.qi.sdk.object.geometry.Vector3;
+import com.aldebaran.qi.sdk.object.holder.AutonomousAbilitiesType;
+import com.aldebaran.qi.sdk.object.holder.Holder;
 import com.aldebaran.qi.sdk.object.human.Human;
 import com.aldebaran.qi.sdk.object.humanawareness.EngageHuman;
 import com.aldebaran.qi.sdk.object.humanawareness.HumanAwareness;
@@ -32,7 +41,9 @@ import com.storm.posh.plan.planelements.Sense;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCallbacks {
@@ -63,6 +74,9 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     protected boolean mappingInProgress = false;
     protected boolean mappingComplete = false;
 
+    // Store the saved locations.
+    private Map<Integer, FreeFrame> savedLocations = new HashMap<>();
+
     // Store the HumanAwareness service.
     protected HumanAwareness humanAwareness;
 
@@ -71,6 +85,17 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
 
     protected Human recommendedHumanToEngage;
 
+
+    // A boolean used to store the abilities status.
+    private boolean abilitiesHeld = false;
+    // The holder for the abilities.
+    private Holder holder;
+    // Store the GoTo action.
+    private GoTo goTo;
+    // Store the Actuation service.
+    protected Actuation actuation;
+    // Store the Mapping service.
+    protected Mapping mapping;
     // Store the LocalizeAndMap action.
     protected LocalizeAndMap localizeAndMap;
     // Store the map.
@@ -80,6 +105,8 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     // Store the Localize action.
     protected Localize localize;
     protected Future<Void> localization;
+
+    protected Chat chat;
 
     protected Date lastActive;
 
@@ -125,10 +152,12 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
         talking = false;
         listening = false;
         animating = false;
-        humanPresent = false;
-        humanEngaged = false;
         facingNearHuman = false;
         safeToMap = true;
+
+        // Don't reset these
+//        humanPresent = false;
+//        humanEngaged = false;
     }
 
     public boolean getBooleanSense(Sense sense) {
@@ -248,6 +277,70 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
                 Log.d(TAG, "UNKNOWN ACTION");
                 break;
         }
+    }
+
+    public void saveLocation() {
+        // Get the robot frame asynchronously.
+        Future<Frame> robotFrameFuture = actuation.async().robotFrame();
+        robotFrameFuture.andThenConsume(robotFrame -> {
+            // Create a FreeFrame representing the current robot frame.
+            FreeFrame locationFrame = mapping.makeFreeFrame();
+            Transform transform = TransformBuilder.create().fromXTranslation(0);
+            locationFrame.update(robotFrame, transform, 0L);
+
+            // Store the FreeFrame in the next slot.
+            // A Map is used here so we can easily switch to named slots in future
+            // but for now they have to be added in the correct order the behaviour library needs.
+            savedLocations.put(savedLocations.size(), locationFrame);
+            activity.updateLocationsCount(savedLocations.size());
+        });
+    }
+
+    public void clearLocations() {
+        savedLocations.clear();
+        activity.updateLocationsCount(savedLocations.size());
+    }
+
+    protected void locationReached(int id) {
+        // placeholder for other behaviour libraries to extend
+    }
+
+    public void goToLocation(int id) {
+        if (!savedLocations.containsKey(id)) {
+            pepperLog.appendLog(TAG, String.format("No location saved with id: %d", id));
+            return;
+        } else if (animating) {
+            pepperLog.appendLog(TAG, String.format("Already animating, cannot go to location with id: %d", id));
+            return;
+        }
+
+        setActive();
+        this.animating = true;
+
+        // Extract the Frame asynchronously.
+        Future<Frame> frameFuture = savedLocations.get(id).async().frame();
+        frameFuture.andThenCompose(frame -> {
+            // Create a GoTo action.
+            goTo = GoToBuilder.with(qiContext)
+                    .withFrame(frame)
+                    .build();
+
+            // Display text when the GoTo action starts.
+            goTo.addOnStartedListener(() -> pepperLog.appendLog(TAG, "Moving..."));
+
+            // Execute the GoTo action asynchronously.
+            return goTo.async().run();
+        }).thenConsume(future -> {
+            if (future.isSuccess()) {
+                pepperLog.appendLog(TAG, String.format("Location %d reached", id));
+                locationReached(id);
+
+            } else if (future.hasError()) {
+                pepperLog.appendLog(TAG, String.format("Go to location error", future.getError()));
+            }
+
+            this.animating = false;
+        });
     }
 
     public void promptForBatteryCharge() {
@@ -496,11 +589,42 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
         this.mappingInProgress = false;
     }
 
+    public void holdAwareness() {
+        // Build and store the holder for the abilities.
+        holder = HolderBuilder.with(qiContext)
+            .withAutonomousAbilities(AutonomousAbilitiesType.BASIC_AWARENESS)
+            .build();
+
+        // Hold the abilities asynchronously.
+        Future<Void> holdFuture = holder.async().hold();
+
+        // Chain the hold with a lambda on the UI thread.
+        holdFuture.andThenConsume(Qi.onUiThread((Consumer<Void>) ignore -> {
+            // Store the abilities status.
+            abilitiesHeld = true;
+        }));
+    }
+
+    public void releaseAwareness() {
+        // Release the holder asynchronously.
+        Future<Void> releaseFuture = holder.async().release();
+
+        // Chain the release with a lambda on the UI thread.
+        releaseFuture.andThenConsume(Qi.onUiThread((Consumer<Void>) ignore -> {
+            // Store the abilities status.
+            abilitiesHeld = false;
+        }));
+    }
+
     // tidy up listeners
     public void removeListeners() {
         // Remove on started listeners from the GoTo action.
         if (goTo != null) {
             goTo.removeAllOnStartedListeners();
+        }
+
+        if (chat != null) {
+            chat.removeAllOnStartedListeners();
         }
 
         // Remove on status changed listeners from the LocalizeAndMap action.
@@ -522,6 +646,8 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     public void onRobotFocusGained(QiContext qiContext) {
         pepperLog.appendLog(TAG, "GAINED FOCUS");
         setQiContext(qiContext);
+        actuation = qiContext.getActuation();
+        mapping = qiContext.getMapping();
 
         FutureUtils
                 .wait(0, TimeUnit.SECONDS)
@@ -560,8 +686,6 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
 
     // Store the action execution future.
     private Future<Void> goToFuture;
-    // Store the GoTo action.
-    private GoTo goTo;
 
     public void searchHumans() {
         HumanAwareness humanAwareness = qiContext.getHumanAwareness();

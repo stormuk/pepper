@@ -7,6 +7,11 @@
             </Actions>
         </ActionPattern>
 
+        <ActionPattern name="AP-GoToStart">
+            <Actions>
+                <Action name="GoToStart"></Action>
+            </Actions>
+        </ActionPattern>
         <ActionPattern name="AP-AskToStart">
             <Actions>
                 <Action name="AskToStart"></Action>
@@ -42,10 +47,20 @@
             </Senses>
         </CompetenceElement>
 
-        <CompetenceElement name="CE-AskToStart" triggers="AP-AskToStart"></CompetenceElement>
+        <CompetenceElement name="CE-GoToStart" triggers="AP-GoToStart">
+            <Senses>
+                <Sense name="AtStart" value="0" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
+        <CompetenceElement name="CE-AskToStart" triggers="AP-AskToStart">
+            <Senses>
+                <Sense name="AtStart" value="1" comparator="bool"></Sense>
+                <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
+            </Senses>
+        </CompetenceElement>
         <CompetenceElement name="CE-ApproachTable" triggers="AP-ApproachTable">
             <Senses>
-                <Sense name="ReadyToStart" value="1" comparator="bool"></Sense>
+                <Sense name="OkToStart" value="1" comparator="bool"></Sense>
                 <Sense name="AtTable" value="0" comparator="bool"></Sense>
             </Senses>
         </CompetenceElement>
@@ -73,6 +88,7 @@
 
         <Competence name="C-Start">
             <CompetenceElements>
+                <CompetenceElement name="CE-GoToStart"></CompetenceElement>
                 <CompetenceElement name="CE-AskToStart"></CompetenceElement>
             </CompetenceElements>
         </Competence>
@@ -91,27 +107,24 @@
     </Competences>
 
     <DriveElements>
-        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="10">
+        <DriveElement name="DE-BatteryPrompt" triggers="C-BatteryPrompt" checkTime="60">
             <Senses>
                 <Sense name="BatteryLow" value="1" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
 
-        <DriveElement name="DE-Start" triggers="C-Start" checkTime="0">
-            <Senses>
-                <Sense name="HumanPresent" value="1" comparator="bool"></Sense>
-            </Senses>
+        <DriveElement name="DE-Start" triggers="C-Start" checkTime="3">
         </DriveElement>
-        <DriveElement name="DE-RollDie" triggers="C-RollDie" checkTime="0">
+        <DriveElement name="DE-RollDie" triggers="C-RollDie" checkTime="3">
             <Senses>
                 <!--<Sense name="HumanPresent" value="1" comparator="bool"></Sense>-->
-                <Sense name="ReadyToStart" value="1" comparator="bool"></Sense>
+                <Sense name="OkToStart" value="1" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
-        <DriveElement name="DE-GetResult" triggers="C-GetResult" checkTime="0">
+        <DriveElement name="DE-GetResult" triggers="C-GetResult" checkTime="3">
             <Senses>
                 <!--<Sense name="HumanPresent" value="1" comparator="bool"></Sense>-->
-                <Sense name="HasRolled" value="1" comparator="bool"></Sense>
+                <Sense name="DieRolled" value="1" comparator="bool"></Sense>
             </Senses>
         </DriveElement>
     </DriveElements>
@@ -125,7 +138,7 @@
 
         <Drive name="D-Start" priority="2">
             <Senses>
-                <Sense name="ReadyToStart" value="1" comparator="bool"></Sense>
+                <Sense name="OkToStart" value="1" comparator="bool"></Sense>
             </Senses>
             <DriveElements>
                 <DriveElement name="DE-Start"></DriveElement>

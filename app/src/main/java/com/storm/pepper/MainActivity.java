@@ -46,12 +46,15 @@ public class MainActivity extends RobotActivity implements PepperLog {
     private TextView checkedSenses;
     private TextView currentDriveName;
     private TextView currentElementName;
+    public TextView locationsLabel;
 
     private PepperServer pepperServer;
     private BaseBehaviourLibrary behaviourLibrary;
 
     public Button startButton;
     public Button stopButton;
+    public Button addLocationButton;
+    public Button clearLocationsButton;
 
     private ArrayList currentElements = new ArrayList();
 
@@ -81,10 +84,10 @@ public class MainActivity extends RobotActivity implements PepperLog {
         planner = new Planner(this);
 
         // configure for chosen plan
-//        planResourceId = R.raw.plan_die;
-//        behaviourLibrary = new DieBehaviourLibrary();
-        planResourceId = R.raw.plan_annoy;
-        behaviourLibrary = new AnnoyBehaviourLibrary();
+        planResourceId = R.raw.plan_die;
+        behaviourLibrary = new DieBehaviourLibrary();
+//        planResourceId = R.raw.plan_annoy;
+//        behaviourLibrary = new AnnoyBehaviourLibrary();
         // end configure for chosen plan
 
         behaviourLibrary.setPepperLog(this);
@@ -105,7 +108,9 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
         startButton = findViewById(R.id.start_button);
         stopButton = findViewById(R.id.stop_button);
-
+        addLocationButton = findViewById(R.id.location_add);
+        clearLocationsButton = findViewById(R.id.locations_clear);
+        locationsLabel = findViewById(R.id.locations_label);
 
         startButton.setOnClickListener(ignore -> {
             Log.d(TAG, "Starting");
@@ -127,10 +132,28 @@ public class MainActivity extends RobotActivity implements PepperLog {
             behaviourLibrary.stopMoving();
         });
 
+        addLocationButton.setOnClickListener(ignore -> {
+            appendLog("SAVING?");
+            behaviourLibrary.saveLocation();
+
+        });
+
+        clearLocationsButton.setOnClickListener(ignore -> {
+            appendLog("CLEARING?");
+            behaviourLibrary.clearLocations();
+        });
+
         drivesList = (ListView) findViewById(R.id.drives_list);
         elementsList = (ListView) findViewById(R.id.elements_list);
 
         readPlan();
+    }
+
+    public void updateLocationsCount(int count) {
+        appendLog("UPDATING?");
+        runOnUiThread(() -> {
+            locationsLabel.setText(getResources().getString(R.string.saved_locations_count, count));
+        });
     }
 
     @Override
