@@ -115,14 +115,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
         startButton.setOnClickListener(ignore -> {
             Log.d(TAG, "Starting");
             runPlan();
-//            if (behaviourLibrary.hasQiContext()) {
-//                appendLog(TAG, "STARTING");
-//
-//                FutureUtils.wait(3, TimeUnit.SECONDS).andThenConsume(ignore_too -> behaviourLibrary.doMapping());
-//            } else {
-//                appendLog(TAG, "CANNOT START YET");
-//            }
-
         });
 
         stopButton.setOnClickListener(ignore -> {
@@ -150,7 +142,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
     }
 
     public void updateLocationsCount(int count) {
-        appendLog("UPDATING?");
         runOnUiThread(() -> {
             locationsLabel.setText(getResources().getString(R.string.saved_locations_count, count));
         });
@@ -247,36 +238,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
     }
 
     @Override
-    public void setCurrentDrive(final DriveCollection drive) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (drive != null) {
-//                    currentDriveName.setText(drive.getNameOfElement());
-                } else {
-//                    currentDriveName.setText("Waiting...");
-                }
-            }
-        });
-
-        setCurrentElement(null);
-    }
-
-    @Override
-    public void setCurrentElement(final PlanElement element) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (element != null) {
-//                    currentElementName.setText(element.getNameOfElement());
-                } else {
-//                    currentElementName.setText("");
-                }
-            }
-        });
-    }
-
-    @Override
     public void addCurrentElement(final PlanElement element) {
         runOnUiThread(new Runnable() {
             @Override
@@ -341,36 +302,6 @@ public class MainActivity extends RobotActivity implements PepperLog {
         }
     }
 
-//    private void displayPlan() {
-//        if (uiPlanTree == null) {
-//            List<DriveCollection> driveCollections = planner.driveCollections();
-//
-//            //createTree
-//            uiPlanTree = new UIPlanTree(driveCollections, getApplicationContext(), overlayLayout);
-//            //root = uiPlanTree.getRoot();
-//            uiPlanTree.initState();
-//
-//            backgroundColorExecutor = Executors.newSingleThreadExecutor();
-//            backgroundPingerScheduler = Executors.newSingleThreadScheduledExecutor();
-//
-//            backgroundColorExecutor.execute(new Runnable() {
-//                @Override
-//                public void run() {
-//                    final Runnable backgroundPinger = new Runnable() {
-//
-//                        @Override
-//                        public void run() {
-//                            uiPlanTree.setDefaultBackgroundColorNodes();
-//                        }
-//                    };
-//
-//                    backgroundPingerScheduler.scheduleAtFixedRate(backgroundPinger, 30, 400, TimeUnit.MILLISECONDS);
-//                }
-//            });
-//
-//        }
-//    }
-
     public void runPlan() {
         clearLog();
         FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume(ignore -> behaviourLibrary.doHumans());
@@ -417,81 +348,16 @@ public class MainActivity extends RobotActivity implements PepperLog {
 
         // runnable must be execute once
         FutureUtils
-                .wait(3, TimeUnit.SECONDS)
-                .andThenConsume(ignore -> {
-                    appendLog("RESETTING PLAN");
-                    planner.reset();
+            .wait(1, TimeUnit.SECONDS)
+            .andThenConsume(ignore -> {
+                appendLog("RESETTING PLAN");
+                planner.reset();
 
-                    appendLog("RUNNING PLAN");
-                    handler.postDelayed(planRunner, 1000);
-                });
+                appendLog("RUNNING PLAN");
+                handler.postDelayed(planRunner, 1000);
+            });
     }
 
-//    private void createGeneralHandler() {
-//        generalHandler = new Handler(Looper.getMainLooper()){
-//            @Override
-//            public void handleMessage(Message msg){
-//
-//                switch (msg.what){
-//                    case SERVER_RESPONSE:
-//
-//                        if(serverTextView.getVisibility() == View.VISIBLE) {
-//                            serverTextView.append("\n" + msg.obj);
-//                        }
-//
-//                        updateARElementsVisuals(msg);
-//
-//                        break;
-//
-//                    default:
-//                        super.handleMessage(msg);
-//                }
-//            }
-//        };
-//    }
-
-//    public void reset() {
-////        stopExecutorService(networkExecutor);
-//        stopExecutorService(backgroundColorExecutor);
-////        stopExecutorService(serverPingerScheduler);
-//        stopExecutorService(backgroundPingerScheduler);
-//        generalHandler.removeCallbacksAndMessages(null);
-//
-//        if(uiPlanTree != null) {
-//            uiPlanTree.removeNodesFromUI(rootLayout, uiPlanTree.getRoot());
-//        }else{
-//            uiPlanTree.removeNodesFromUI(rootLayout, uiPlanTree.getRoot());
-//        }
-//
-//        //root = null;
-//        uiPlanTree = null;
-//        mode = 0;
-////        networkExecutor = null;
-//    }
-//
-//    private boolean stopExecutorService(ExecutorService service) {
-//
-//        if(service == null){
-//            return false;
-//        }else {
-//            service.shutdown();
-//            try {
-//                if (!service.awaitTermination(100, TimeUnit.MICROSECONDS)) {
-//                    service.shutdownNow();
-//                }
-//            } catch (InterruptedException e) {
-//                System.out.println("stopExecutorService() throwed " + e.getMessage());
-//                e.printStackTrace();
-//            }
-//        }
-//
-//        if(service.isTerminated() && service.isShutdown()){
-//            Log.i("NETWORK_TASK", "SUCCESSFULL SHUTDOWN OF GENERIC ExecutorService");
-//            return true;
-//        }else{
-//            return false;
-//        }
-//    }
 
     @Override
     protected void onDestroy() {
@@ -500,5 +366,4 @@ public class MainActivity extends RobotActivity implements PepperLog {
         pepperServer.destroy();
         super.onDestroy();
     }
-
 }

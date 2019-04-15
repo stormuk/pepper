@@ -38,7 +38,6 @@ public class Planner {
     public boolean update(int iteration) {
         this.iteration = iteration;
         pepperLog.clearCheckedSenses();
-        pepperLog.setCurrentDrive(null);
         drivesHandler();
         return true;
     }
@@ -115,8 +114,6 @@ public class Planner {
         pepperLog.notifyABOD3(drive.getNameOfElement(), "D");
         long time = Calendar.getInstance().getTimeInMillis();
         plan.setCurrentDrive(drive);
-        pepperLog.setCurrentDrive(drive);
-
 
         for (DriveElement driveElement : drive.getDriveElements()) {
             pepperLog.appendLog(TAG, String.format("Running: %s", driveElement));

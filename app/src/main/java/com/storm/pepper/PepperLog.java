@@ -10,8 +10,6 @@ public interface PepperLog {
     void appendLog(String text);
     void clearLog();
 
-    void setCurrentDrive(DriveCollection drive);
-    void setCurrentElement(PlanElement element);
     void addCurrentElement(PlanElement element);
     void clearCurrentElements();
 

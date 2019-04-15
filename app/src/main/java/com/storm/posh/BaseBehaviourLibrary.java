@@ -11,6 +11,7 @@ import com.aldebaran.qi.sdk.builder.GoToBuilder;
 import com.aldebaran.qi.sdk.builder.HolderBuilder;
 import com.aldebaran.qi.sdk.builder.LocalizeAndMapBuilder;
 import com.aldebaran.qi.sdk.builder.LocalizeBuilder;
+import com.aldebaran.qi.sdk.builder.LookAtBuilder;
 import com.aldebaran.qi.sdk.builder.SayBuilder;
 import com.aldebaran.qi.sdk.builder.TransformBuilder;
 import com.aldebaran.qi.sdk.object.actuation.Actuation;
@@ -21,6 +22,8 @@ import com.aldebaran.qi.sdk.object.actuation.FreeFrame;
 import com.aldebaran.qi.sdk.object.actuation.GoTo;
 import com.aldebaran.qi.sdk.object.actuation.Localize;
 import com.aldebaran.qi.sdk.object.actuation.LocalizeAndMap;
+import com.aldebaran.qi.sdk.object.actuation.LookAt;
+import com.aldebaran.qi.sdk.object.actuation.LookAtMovementPolicy;
 import com.aldebaran.qi.sdk.object.actuation.Mapping;
 import com.aldebaran.qi.sdk.object.conversation.Chat;
 import com.aldebaran.qi.sdk.object.conversation.ListenResult;
@@ -105,6 +108,8 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     // Store the Localize action.
     protected Localize localize;
     protected Future<Void> localization;
+    // Store the LookAt action
+    protected Future<Void> lookAtFuture;
 
     protected Chat chat;
 
@@ -265,14 +270,6 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
                 stopListening();
                 break;
 
-            case "DoMapping":
-                doMapping();
-                break;
-
-            case "ForgetMap":
-                forgetMap();
-                break;
-
             default:
                 Log.d(TAG, "UNKNOWN ACTION");
                 break;
@@ -331,6 +328,8 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
             // Execute the GoTo action asynchronously.
             return goTo.async().run();
         }).thenConsume(future -> {
+            this.animating = false;
+
             if (future.isSuccess()) {
                 pepperLog.appendLog(TAG, String.format("Location %d reached", id));
                 locationReached(id);
@@ -339,7 +338,6 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
                 pepperLog.appendLog(TAG, String.format("Go to location error", future.getError()));
             }
 
-            this.animating = false;
         });
     }
 
@@ -459,10 +457,10 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     private void updateHumanToEngage(Human human) {
         recommendedHumanToEngage = human;
         if (human != null) {
-//            pepperLog.appendLog(TAG, "Updating humanToEngage - none!");
+            pepperLog.appendLog(TAG, "Updating humanToEngage - none!");
             this.humanEngaged = false;
         } else {
-//            pepperLog.appendLog(TAG, "Updating humanToEngage - found!");
+            pepperLog.appendLog(TAG, "Updating humanToEngage - found!");
             this.humanEngaged = true;
         }
     }
@@ -545,7 +543,7 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
                     this.mappingComplete = true;
 
                     Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-                            .withText("I've finished mapping, you can come back in now!") // Set the text to say.
+                            .withText("I've finished mapping. You can come back now.") // Set the text to say.
                             .build(); // Build the say action.
 
                     this.talking = true;
@@ -576,17 +574,6 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
 
             this.mappingInProgress = false;
         });
-    }
-
-    public void forgetMap() {
-        pepperLog.appendLog(TAG, "Forgetting map");
-        if (localization != null) {
-            pepperLog.appendLog(TAG, "Requesting localization cancellation...");
-            localization.requestCancellation();
-        }
-        this.explorationMap = null;
-        this.mappingComplete = false;
-        this.mappingInProgress = false;
     }
 
     public void holdAwareness() {
@@ -650,20 +637,9 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
         mapping = qiContext.getMapping();
 
         FutureUtils
-                .wait(0, TimeUnit.SECONDS)
-                .andThenConsume(ignore -> doHumans())
-                .andThenConsume(ignore -> doMapping());
-
-        // The robot focus is gained.
-//
-//        // Create a new say action.
-//        Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-//                .withText("Hello human!") // Set the text to say.
-//                .build(); // Build the say action.
-//
-//        // Execute the action.
-//        say.run();
-
+            .wait(0, TimeUnit.SECONDS)
+            .andThenConsume(ignore -> doHumans())
+            .andThenConsume(ignore -> doMapping());
     }
 
     @Override
@@ -676,6 +652,7 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
     @Override
     public void onRobotFocusRefused(String reason) {
         // The robot focus is refused.
+        pepperLog.appendLog(TAG, String.format("Robot focus refused: %s", reason));
     }
 
     public void setAnimating(boolean state) {
@@ -712,6 +689,45 @@ public class BaseBehaviourLibrary implements BehaviourLibrary, RobotLifecycleCal
 
         // Return the closest human.
         return Collections.min(humans, comparator);
+    }
+
+    protected void lookAtHuman() {
+        lookAtHuman(LookAtMovementPolicy.HEAD_AND_BASE);
+    }
+    protected void lookAtHuman(LookAtMovementPolicy policy) {
+        if (animating) {
+            pepperLog.appendLog(TAG, "Already animating. Cannot look at human");
+            return;
+        }
+
+        Human targetHuman = null;
+        if (recommendedHumanToEngage != null) {
+            targetHuman = recommendedHumanToEngage;
+        } else if (humans.size() > 0) {
+            targetHuman = getClosestHuman(this.humans);
+        }
+
+        if (targetHuman == null) {
+            pepperLog.appendLog(TAG, "No human to look at");
+            return;
+        }
+
+        setAnimating(true);
+
+        Frame targetFrame = createTargetFrame(targetHuman);
+
+        LookAt lookAt = LookAtBuilder.with(qiContext)
+            .withFrame(targetFrame)
+            .build();
+
+        lookAt.setPolicy(policy);
+
+        lookAtFuture = lookAt.async().run();
+
+        lookAtFuture.andThenConsume(ignore -> {
+            pepperLog.appendLog(TAG, "Done looking");
+            setAnimating(false);
+        });
     }
 
     private boolean isHumanClose() {

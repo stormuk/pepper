@@ -236,13 +236,23 @@ public class DieBehaviourLibrary extends BaseBehaviourLibrary {
     protected void locationReached(int id) {
         pepperLog.appendLog(TAG, String.format("Reached: %d", id));
         if (id == 0) {
-            this.atStart = true;
-            pepperLog.appendLog(TAG, String.format("Reached: Start"));
+            reachedStart();
         } else if (id == 1) {
-            this.atTable = true;
-            pepperLog.appendLog(TAG, String.format("Reached: Table"));
-            holdAwareness();
+            reachedTable();
+        } else {
+            pepperLog.appendLog(TAG, "Unknown location reached");
         }
+    }
+
+    private void reachedStart() {
+        this.atStart = true;
+        pepperLog.appendLog(TAG, String.format("Reached: Start"));
+    }
+
+    private void reachedTable() {
+        this.atTable = true;
+        pepperLog.appendLog(TAG, String.format("Reached: Table"));
+        lookAtHuman();
     }
 
     public void checkReady() {
@@ -262,7 +272,7 @@ public class DieBehaviourLibrary extends BaseBehaviourLibrary {
 
         FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
             Say say = SayBuilder.with(qiContext) // Create the builder with the context.
-                    .withText("Am I holding a die?") // Set the text to say.
+                    .withText("Are you ready to continue?") // Set the text to say.
                     .build(); // Build the say action.
 //                    .withBodyLanguageOption(BodyLanguageOption.DISABLED)
 
@@ -270,37 +280,23 @@ public class DieBehaviourLibrary extends BaseBehaviourLibrary {
 
             this.talking = false;
 
-            pepperLog.appendLog(TAG, "1");
-
             FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore2) -> {
                 // TODO: Only init this once
-                pepperLog.appendLog(TAG, "2");
                 PhraseSet phraseSet = PhraseSetBuilder.with(qiContext).withTexts("Yes", "No").build();
-                pepperLog.appendLog(TAG, "3");
                 Listen listen = ListenBuilder.with(qiContext).withPhraseSet(phraseSet).build();
-
-                listen.addOnStartedListener(() -> {
-                    pepperLog.appendLog("Started listening...");
-                    pepperLog.appendLog(TAG, "4");
-                });
 
                 this.listenFuture = listen.async().run();
 
                 listenFuture.thenConsume(future -> {
                     this.listening = false;
-                    pepperLog.appendLog(TAG, "5");
-                    handleFuture(future, "listen_for_answer");
 
                     try {
                         ListenResult result = future.get();
 
                         Phrase heardPhrase = result.getHeardPhrase();
 
-                        pepperLog.appendLog(TAG, String.format("Phrase was: %s", heardPhrase));
-
                         if (heardPhrase.getText().equals("Yes")) {
                             this.humanReady = true;
-                            pepperLog.appendLog(TAG, "Heard the OK!");
                         }
 
                         listenFuture.requestCancellation();
@@ -354,6 +350,11 @@ public class DieBehaviourLibrary extends BaseBehaviourLibrary {
         this.talking = true;
         this.listening = true;
 
+        if (lookAtFuture != null) {
+            pepperLog.appendLog(TAG, "Stop looking");
+            lookAtFuture.requestCancellation();
+        }
+
         FutureUtils.wait(0, TimeUnit.SECONDS).andThenConsume((ignore) -> {
             Say say = SayBuilder.with(qiContext) // Create the builder with the context.
                     .withText("What is the number on the dice?") // Set the text to say.
@@ -377,8 +378,7 @@ public class DieBehaviourLibrary extends BaseBehaviourLibrary {
             chatRollResult.addOnValueChangedListener(currentValue -> {
                 Log.i(TAG, "chatRollResult: " + String.valueOf(currentValue));
                 this.rollResult = Double.valueOf(currentValue);
-                releaseAwareness();
-                this.atStart = false;
+                this.reset();
             });
 
 

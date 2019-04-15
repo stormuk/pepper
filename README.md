@@ -73,10 +73,23 @@ behaviourLibrary = new ExampleBehaviourLibrary();
 #### Common elements
 The `BaseBehaviourLibrary` makes some common senses and actions available, as well as some helper methods, to aid in development of your own libraries.
 ##### Senses
+* Boolean
+    - HumanPresent
+    - BatteryLow
+    - Talking
+    - Listening
+    - Animating
+    - HumanPresent
+    - HumanClose
+    - HumanEngaged
+    - FacingNearHuman
+* Numeric
+    - IdleTime
+
 ##### Actions
+
 ##### Helpers
 
-The main variable elements of an application are the well-understood plan files and the associated `[plan]BehaviourLibrary` classes which extend the BaseBehaviourLibrary. Each plan and set of behaviours are custom and related, the base library will contain actions and senses that are easily shared across plans.
 
 ## Remote Monitoring
 ### ABOD3
