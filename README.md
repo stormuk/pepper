@@ -43,7 +43,7 @@ First ensure that your Pepper robot is connected to the same WiFi network as you
 5. You can now "Run" the Android application onto the Pepper robot.
 
 ## Design Principles
-Please familiarise yourself with the following concepts to help in understanding the [application structure](#application-structure).
+Please familiarise yourself with the following concepts to help in understanding the [application structure](#application-structure), as authored by [Professor Joanna J Bryson](http://www.cs.bath.ac.uk/~jjb/index.html) and colleagues:
 
 * [POSH (Parallel-rooted, Ordered Slip-stack Hierarchical) - dynamic plans](http://www.cs.bath.ac.uk/~jjb/web/posh.html)
 * [BOD (Behaviour Oriented Design) - behaviour libraries](http://www.cs.bath.ac.uk/~jjb/web/bod.html)
@@ -98,22 +98,22 @@ The `BaseBehaviourLibrary` makes some common senses and actions available, as we
     - IdleTime
 
 ##### Actions
-    - DismissHumans - to ask any humans present to leave the room (for mapping)
-    - PromptForBatteryCharge - to ask to be plugged in when battery is low
-    - StopListening - to cancel any active listening actions
+* DismissHumans - to ask any humans present to leave the room (for mapping)
+* PromptForBatteryCharge - to ask to be plugged in when battery is low
+* StopListening - to cancel any active listening actions
 
 ##### Helpers
-    - DoMapping
-    - SaveLocation
-    - ClearLocations
-    - GoToLocation
-    - HoldAwareness
-    - ReleaseAwareness
+* DoMapping
+* SaveLocation
+* ClearLocations
+* GoToLocation
+* HoldAwareness
+* ReleaseAwareness
 
 
 ## Remote Monitoring
 ### Android Studio
-When running an application from Android Studio it is possible to view live debug information in the "Logcat" pane, usually accessed from the bottom left of the window.
+When running an application from Android Studio it is possible to view raw debug information in the "Logcat" pane, usually accessed from the bottom left of the window.
 
 ### ABOD3
 Load the plan file and see the elements highlighted as the POSH planner considers and prioritises them.
@@ -123,10 +123,10 @@ To be documented as development continues. Currently this consists of a simple r
 
 
 # Credits
-The code in this repository depends heavily on earlier projects, including:
+The code in this repository is built upon on the work of others, including:
 
-* ABOD3
-* ABOD3AR
-* BOD-UNity-Game
+* [ABOD3](https://github.com/RecklessCoding/ABOD3) - Andreas Theodorou
+* [BOD-UNity-Game](https://github.com/RecklessCoding/BOD-UNity-Game) - Andreas Theodorou
+* [ABOD3AR](https://github.com/alexs7/ABOD3AR) - Alexandros Rotsidi
 
 This section needs to be filled out with links and names.

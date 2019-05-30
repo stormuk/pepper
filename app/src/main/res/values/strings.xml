@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Experiment 1</string>
+    <string name="app_name">POSH Example App</string>
     <string name="button_run_plan">Run Plan</string>
     <string name="button_read_plan">Read Plan</string>
     <string name="text_planner_log_waiting">Waiting for plan to run...</string>
