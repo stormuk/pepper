@@ -33,6 +33,15 @@ Please ensure your Pepper robot is running version 2.9.x. If the robot is runnin
 
 It should also be noted that 2.9 is only compatible with Peppers 1.8 and 1.8a. Earlier 1.6 robots will not work. You can identify your robot version [using this guide](http://doc.aldebaran.com/2-5/family/pepper_technical/pepper_versions.html), and should do so before developing Android apps for it.
 
+## Connecting
+First ensure that your Pepper robot is connected to the same WiFi network as your development computer, then follow these steps:
+
+1. Use the *Tools -> Pepper SDK* menu and click "Connect". This will open a window to let you select the Pepper robot
+2. Highlight a robot, and press the 'Select' button
+3. You will be prompted for the password. Once this has been entered correctly, the robot viewer window will open
+4. There will also be a popup asking for the tablet IP address, sometimes this appears behind the robot viewer. On the robot's tablet, you can swipe down the notification area and see the IP address for the tablet labelled as "For Run/Debug Config". Enter the IP address and add the port number 5555, eg. "192.168.1.101:5555". Press OK
+5. You can now "Run" the Android application onto the Pepper robot.
+
 ## Design Principles
 Please familiarise yourself with the following concepts to help in understanding the [application structure](#application-structure).
 
@@ -52,7 +61,9 @@ It has been decided to keep the basic Android functionality (primarily UI/OS int
 When the Android app first starts, the robot will map its surroundings and localise itself within the space. This improves Pepper's ability to identify and track humans.
 
 #### User interface
-The UI is intentionally simple, showing the currently active DriveCollection on the left, and the path through the decision tree to the current Action. There is a Start and Stop button to control plan execution.
+The UI is intentionally simple, showing the currently active DriveCollection on the left, and the path through the decision tree to the current Action. There is a "Start" and "Stop" button to control plan execution.
+
+It is also possible to store a series of locations that can be used by plans. Use the "Add" and "Clear" buttons in the bottom right to set these before starting a plan execution. Remember to open the robot's charging port before moving the robot into each location or the motors will be damaged. Press "Add" at each location you wish to store. And then remember to close the charging port again.
 
 #### POSH plans
 Although the ABOD3 software supports multiple POSH plan formats, currently this app only supports XML plans. Wider plan file support (Lisp, JSON) should be implemented as part of future UI improvements relating to plan selection.
@@ -87,13 +98,35 @@ The `BaseBehaviourLibrary` makes some common senses and actions available, as we
     - IdleTime
 
 ##### Actions
+    - DismissHumans - to ask any humans present to leave the room (for mapping)
+    - PromptForBatteryCharge - to ask to be plugged in when battery is low
+    - StopListening - to cancel any active listening actions
 
 ##### Helpers
+    - DoMapping
+    - SaveLocation
+    - ClearLocations
+    - GoToLocation
+    - HoldAwareness
+    - ReleaseAwareness
 
 
 ## Remote Monitoring
+### Android Studio
+When running an application from Android Studio it is possible to view live debug information in the "Logcat" pane, usually accessed from the bottom left of the window.
+
 ### ABOD3
 Load the plan file and see the elements highlighted as the POSH planner considers and prioritises them.
 
 ### Web app
 To be documented as development continues. Currently this consists of a simple ruby script which listens for logging events from the robot and then passes them on to a websockets-enabled Rails app for display.
+
+
+# Credits
+The code in this repository depends heavily on earlier projects, including:
+
+* ABOD3
+* ABOD3AR
+* BOD-UNity-Game
+
+This section needs to be filled out with links and names.
