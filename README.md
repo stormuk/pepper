@@ -123,10 +123,9 @@ To be documented as development continues. Currently this consists of a simple r
 
 
 # Credits
-The code in this repository is built upon on the work of others, including:
+The code in this repository is built upon on the work of others, including amongst others:
 
 * [ABOD3](https://github.com/RecklessCoding/ABOD3) - Andreas Theodorou
 * [BOD-UNity-Game](https://github.com/RecklessCoding/BOD-UNity-Game) - Andreas Theodorou
 * [ABOD3AR](https://github.com/alexs7/ABOD3AR) - Alexandros Rotsidi
 
-This section needs to be filled out with links and names.
