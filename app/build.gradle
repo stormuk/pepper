@@ -29,7 +29,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.aldebaran:qisdk:1.4.4'
-    implementation 'com.aldebaran:qisdk-design:1.4.4'
+    implementation 'com.aldebaran:qisdk:1.4.8'
+    implementation 'com.aldebaran:qisdk-design:1.4.8'
     implementation 'com.android.support:support-v4:28.0.0'
 }
