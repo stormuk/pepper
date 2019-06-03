@@ -1,3 +1,2 @@
+repository: stormuk/pepper
 theme: jekyll-theme-cayman
-title: POSH for Pepper
-description: Android app for the Pepper robot, integrating Java ports of POSH and ABOD3
